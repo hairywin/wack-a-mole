@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Whack-a-Mole — 3×3</title>
+<style>
+  :root{
+    --bg:#0a0f1f;
+    --panel:#0f1734;
+    --panel-2:#0b1230;
+    --ink:#e9eeff;
+    --muted:#a9b1d6;
+    --ring:#233068;
+    --accent:#36d399;
+    --warn:#ffb020;
+    --danger:#ff6b6b;
+    --hole:#111a3f;
+    --glow:#53ffd0;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif; color:var(--ink);
+    background:radial-gradient(120% 100% at 50% 0%, #16214a 0%, #0a0f1f 60%, #070a16 100%);
+    -webkit-tap-highlight-color:transparent; display:flex; align-items:center; justify-content:center; padding:18px;
+  }
+  .wrap{width:min(900px,100%);}
+
+  .hud{
+    display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center;
+    background:linear-gradient(180deg,#121a3a, #0e1631); border:1px solid var(--ring);
+    border-radius:16px; padding:12px 14px; box-shadow:0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .meters{display:flex; gap:10px 14px; flex-wrap:wrap; align-items:center}
+  .pill{
+    display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px;
+    background:var(--panel-2); border:1px solid #203163; font-weight:700
+  }
+  .pill .num{font-variant-numeric:tabular-nums; letter-spacing:.02em}
+  .pill.timer .num{color:var(--accent)}
+  .pill.misses .num{color:var(--danger)}
+  .pill.acc .num{color:#9ad4ff}
+
+  .controls{display:flex; gap:10px}
+  button{
+    appearance:none; border:1px solid #233062; background:#141d42; color:var(--ink);
+    font-weight:800; padding:10px 14px; border-radius:12px; cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+    transition:transform .06s ease, filter .06s ease, box-shadow .12s ease;
+  }
+  button:active{transform:translateY(1px)}
+  button[disabled]{opacity:.6; cursor:not-allowed}
+
+  .timebar{
+    grid-column:1 / -1; position:relative; height:10px; border-radius:999px; overflow:hidden;
+    background:#0b1333; border:1px solid #1e2a55;
+  }
+  .timebar > .fill{
+    height:100%; width:100%; background:linear-gradient(90deg,#4ff3be, #2cc8ff);
+    box-shadow:0 0 16px rgba(83,255,208,.4) inset;
+    transition:width .25s linear;
+  }
+
+  .board{
+    margin:18px auto 10px; width:min(94vmin,640px);
+    display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+  }
+  .hole{
+    position:relative; aspect-ratio:1/1; border-radius:18px; overflow:hidden; cursor:pointer;
+    background:
+      radial-gradient(60% 60% at 50% 45%, rgba(255,255,255,.08) 0%, rgba(255,255,255,0) 60%),
+      radial-gradient(80% 80% at 50% 100%, #0b1130 0%, #08102c 35%, transparent 38%),
+      linear-gradient(180deg, #1a2350 0%, #111a3f 100%);
+    border:1px solid #26336b; box-shadow:inset 0 10px 24px rgba(0,0,0,.45), 0 10px 26px rgba(0,0,0,.35);
+    touch-action:manipulation;
+  }
+  .hole::after{
+    content:""; position:absolute; left:50%; bottom:3%; transform:translateX(-50%);
+    width:76%; height:10%; border-radius:50%;
+    background:radial-gradient(80% 120% at 50% 50%, #0a1231 0%, #050a1f 85%);
+    filter:blur(.5px);
+  }
+  .hole:hover{outline:1px solid #2a3977}
+
+  .mole{
+    position:absolute; left:50%; bottom:0;
+    transform:translate(-50%, 110%) scale(.95);
+    font-size:clamp(32px, 9vmin, 80px); line-height:1; user-select:none; pointer-events:none;
+    text-shadow:0 8px 14px rgba(0,0,0,.5);
+    transition:transform .18s cubic-bezier(.2,.8,.2,1), opacity .18s ease, filter .18s ease;
+    opacity:0;
+  }
+  .hole.has-mole .mole{ transform:translate(-50%, -6%) scale(1); opacity:1; filter:drop-shadow(0 0 10px rgba(83,255,208,.25)) }
+
+  .hole.bonk{ animation:bonk .18s ease }
+  .miss-flash{ animation:miss .22s ease }
+  @keyframes bonk{ 0%{filter:brightness(1)} 50%{filter:brightness(1.5)} 100%{filter:brightness(1)} }
+  @keyframes miss{ 0%{background-color:transparent} 40%{background-color:rgba(255,107,107,.18)} 100%{background-color:transparent} }
+
+  .pop{
+    position:absolute; left:50%; top:35%; transform:translate(-50%, 0);
+    font-weight:900; font-variant-numeric:tabular-nums; pointer-events:none; user-select:none;
+    text-shadow:0 6px 12px rgba(0,0,0,.5); opacity:0; animation:rise .6s ease forwards;
+    font-size:clamp(16px, 4.2vmin, 28px);
+  }
+  .pop.hit{ color:var(--accent) }
+  .pop.miss{ color:var(--danger) }
+  @keyframes rise{ from{transform:translate(-50%, 10px); opacity:0} 30%{opacity:1} to{transform:translate(-50%,-22px); opacity:0} }
+
+  .status{ text-align:center; color:var(--muted); font-size:14px; min-height:1.4em }
+  .hole:focus-visible{ outline:3px solid var(--glow); outline-offset:2px }
+
+  @media (prefers-reduced-motion: reduce){
+    .mole,.timebar>.fill, .hole.bonk, .miss-flash, .pop{animation:none; transition:none}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hud" role="region" aria-label="Game heads-up display">
+      <div class="meters">
+        <div class="pill timer">⏱️ <span style="font-weight:800;margin-left:6px">Time:</span> <span id="time" class="num" style="margin-left:6px">30</span>s</div>
+        <div class="pill score">🔨 <span style="font-weight:800;margin-left:6px">Score:</span> <span id="score" class="num" style="margin-left:6px">0</span></div>
+        <div class="pill misses">❌ <span style="font-weight:800;margin-left:6px">Misses:</span> <span id="misses" class="num" style="margin-left:6px">0</span></div>
+        <div class="pill acc">🎯 <span style="font-weight:800;margin-left:6px">Accuracy:</span> <span id="acc" class="num" style="margin-left:6px">100%</span></div>
+      </div>
+      <div class="controls">
+        <button id="restartBtn" type="button" aria-label="Restart game">↻ Restart</button>
+      </div>
+      <div class="timebar" aria-hidden="true">
+        <div id="timeFill" class="fill"></div>
+      </div>
+    </div>
+
+    <div id="board" class="board" aria-label="Whack-a-mole board" role="grid">
+      <!-- 3×3 -->
+      <button class="hole" role="gridcell" data-idx="0" aria-label="Hole 1"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" role="gridcell" data-idx="1" aria-label="Hole 2"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" role="gridcell" data-idx="2" aria-label="Hole 3"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" role="gridcell" data-idx="3" aria-label="Hole 4"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" role="gridcell" data-idx="4" aria-label="Hole 5"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" role="gridcell" data-idx="5" aria-label="Hole 6"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" role="gridcell" data-idx="6" aria-label="Hole 7"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" role="gridcell" data-idx="7" aria-label="Hole 8"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" role="gridcell" data-idx="8" aria-label="Hole 9"><div class="mole" aria-hidden="true">🐶</div></button>
+    </div>
+
+    <div id="status" class="status" aria-live="polite"></div>
+  </div>
+
+<script>
+(() => {
+  const HOLES = Array.from(document.querySelectorAll('.hole'));
+  const timeEl = document.getElementById('time');
+  const scoreEl = document.getElementById('score');
+  const missEl  = document.getElementById('misses');
+  const accEl   = document.getElementById('acc');
+  const timeFill= document.getElementById('timeFill');
+  const statusEl= document.getElementById('status');
+  const restartBtn = document.getElementById('restartBtn');
+  const board = document.getElementById('board');
+
+  const GAME_SECONDS = 30;
+  const MOVE_MS = 850;
+
+  let score = 0;
+  let misses = 0;
+  let taps = 0;
+  let timeLeft = GAME_SECONDS;
+  let moleIdx = -1;
+  let gameOn = false;
+  let moveTimer = null;
+  let tickTimer = null;
+
+  function randIdx(exclude){
+    if (HOLES.length <= 1) return 0;
+    let i;
+    do { i = (Math.random()*HOLES.length)|0; } while (i === exclude);
+    return i;
+  }
+
+  function showMole(i){
+    clearMole();
+    if (i >= 0) {
+      HOLES[i].classList.add('has-mole');
+      moleIdx = i;
+    }
+  }
+
+  function clearMole(){
+    if (moleIdx >= 0) {
+      HOLES[moleIdx].classList.remove('has-mole');
+      moleIdx = -1;
+    }
+  }
+
+  function setStatus(msg){ statusEl.textContent = msg || ""; }
+
+  function updateHUD(){
+    timeEl.textContent = timeLeft.toString();
+    scoreEl.textContent = score.toString();
+    missEl.textContent  = misses.toString();
+    const acc = taps ? Math.round((score / taps) * 100) : 100;
+    accEl.textContent = `${acc}%`;
+    timeFill.style.width = `${(timeLeft / GAME_SECONDS) * 100}%`;
+  }
+
+  function popup(type, host){
+    const sp = document.createElement('div');
+    sp.className = `pop ${type}`;
+    sp.textContent = type === 'hit' ? '+1' : 'miss';
+    host.appendChild(sp);
+    setTimeout(() => sp.remove(), 700);
+  }
+
+  function endGame(){
+    gameOn = false;
+    clearInterval(moveTimer); moveTimer = null;
+    clearInterval(tickTimer); tickTimer = null;
+    clearMole();
+    restartBtn.disabled = false;
+    setStatus(`Time up. Final score ${score}.`);
+  }
+
+  function startGame(){
+    score = 0; misses = 0; taps = 0; timeLeft = GAME_SECONDS;
+    updateHUD(); setStatus("Tap only when the dog is up.");
+    clearInterval(moveTimer); clearInterval(tickTimer); clearMole();
+    restartBtn.disabled = true;
+    gameOn = true;
+
+    showMole(randIdx(-1));
+
+    moveTimer = setInterval(() => {
+      if (!gameOn) return;
+      showMole(randIdx(moleIdx));
+    }, MOVE_MS);
+
+    tickTimer = setInterval(() => {
+      if (!gameOn) return;
+      timeLeft -= 1;
+      if (timeLeft <= 0) { timeLeft = 0; updateHUD(); endGame(); return; }
+      updateHUD();
+    }, 1000);
+  }
+
+  board.addEventListener('pointerdown', (e) => {
+    if (!gameOn) return;
+    const hole = e.target.closest('.hole');
+    if (!hole) return;
+
+    taps += 1;
+    const idx = Number(hole.dataset.idx);
+
+    if (idx === moleIdx) {
+      score += 1;
+      hole.classList.add('bonk');
+      popup('hit', hole);
+      setTimeout(() => hole.classList.remove('bonk'), 150);
+      clearMole();
+    } else {
+      misses += 1;
+      document.body.classList.add('miss-flash');
+      popup('miss', hole);
+      setTimeout(() => document.body.classList.remove('miss-flash'), 180);
+    }
+    updateHUD();
+  }, { passive:true });
+
+  window.addEventListener('keydown', (e) => {
+    if (!gameOn) return;
+    const n = parseInt(e.key, 10);
+    if (n >= 1 && n <= 9) {
+      HOLES[n-1].dispatchEvent(new PointerEvent('pointerdown', {bubbles:true}));
+    }
+  });
+
+  restartBtn.addEventListener('click', startGame);
+  startGame();
+})();
+</script>
+</body>
+</html>
