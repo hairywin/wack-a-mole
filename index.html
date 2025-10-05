@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
-<title>Whack-a-Dog — Hard Mode (Mobile Optimized)</title>
+<title>Whack-a-Dog — Final Mobile Edition</title>
 <style>
   :root{
     --bg:#0a0c14; --panel:#0e1733; --ink:#fff; --muted:#d6e1ff;
@@ -11,7 +11,7 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100svh;overflow:hidden;background:linear-gradient(180deg,#0c1022 0%,#070a14 60%,#05070e 100%)}
-  [hidden]{display:none !important}
+  [hidden]{display:none!important}
   body{
     display:flex;flex-direction:column;align-items:center;justify-content:space-between;
     font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
@@ -40,25 +40,27 @@
   .timebar{grid-column:1/-1;position:relative;height:8px;border-radius:999px;overflow:hidden;background:#061024;border:2px solid #284a8a;margin-top:4px}
   .timebar>.fill{height:100%;width:100%;background:linear-gradient(90deg,#22d3ee,#60a5fa);transition:width .25s linear}
 
+  /* Game grid */
   .board{
-    flex:1;
-    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
-    width:min(90vmin,550px);max-height:60vh;aspect-ratio:1/1;
-    margin-top:10px;
+    flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+    width:min(90vmin,550px);max-height:60vh;aspect-ratio:1/1;margin-top:10px;
   }
   .hole{
     position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;cursor:pointer;
     background:linear-gradient(180deg,#13255b 0%,#0e183c 100%);border:2px solid #2b4e96;touch-action:manipulation;
+    display:flex;align-items:center;justify-content:center;
   }
   .hole:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
   .mole{
-    position:absolute;left:50%;bottom:0;transform:translate(-50%,110%);
-    font-size:clamp(32px,8vmin,70px);line-height:1;user-select:none;pointer-events:none;opacity:0;
-    transition:transform .15s ease,opacity .15s ease;
+    font-size:clamp(48px,12vmin,100px);
+    line-height:1;user-select:none;pointer-events:none;opacity:0;
+    transition:transform .15s ease,opacity .15s ease;transform:scale(.5);
   }
-  .hole.has-mole .mole{transform:translate(-50%,-6%);opacity:1}
-  .hole.bonk{animation:bonk .18s ease}@keyframes bonk{0%{filter:brightness(1)}50%{filter:brightness(1.6)}100%{filter:brightness(1)}}
-  .miss-flash{animation:miss .22s ease}@keyframes miss{0%{background-color:transparent}40%{background-color:rgba(255,77,77,.22)}100%{background-color:transparent}}
+  .hole.has-mole .mole{opacity:1;transform:scale(1)}
+  .hole.bonk{animation:bonk .18s ease}
+  @keyframes bonk{0%{filter:brightness(1)}50%{filter:brightness(1.6)}100%{filter:brightness(1)}}
+  .miss-flash{animation:miss .22s ease}
+  @keyframes miss{0%{background-color:transparent}40%{background-color:rgba(255,77,77,.22)}100%{background-color:transparent}}
   .pop{position:absolute;left:50%;top:35%;transform:translate(-50%,0);font-weight:1000;font-size:clamp(14px,4.2vmin,22px);
     pointer-events:none;user-select:none;opacity:0;animation:rise .6s ease forwards}
   .pop.hit{color:var(--accent)} .pop.miss,.pop.penalty{color:var(--danger)}
@@ -133,7 +135,6 @@
   const GAME_SECONDS=30,START_MOVE_MS=800,END_MOVE_MS=380,START_VIZ_MS=600,END_VIZ_MS=300;
   const QUICK_PEEK_PROB=.22,QUICK_MIN_MS=150,QUICK_MAX_MS=260,DECOY_PROB=.18;
   const STREAK_STEP=3,STREAK_MOVE_MULT=.94,STREAK_VIZ_MULT=.92,MOVE_FLOOR_MS=260,VIZ_FLOOR_MS=140;
-
   let score=0,misses=0,taps=0,timeLeft=GAME_SECONDS,moleIdx=-1,entity=null,gameOn=false,startedAt=0;
   let tickTimer=null,moveTimeout=null,despawnTimeout=null,streak=0;
 
@@ -146,71 +147,35 @@
   function currentVizMs(){return streakFactor(STREAK_VIZ_MULT,VIZ_FLOOR_MS,baseVizMs());}
   function randIdx(ex){let i;do{i=(Math.random()*HOLES.length)|0;}while(i===ex);return i;}
   function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1));}
-
-  function clearMole(){
-    if(moleIdx>=0){HOLES[moleIdx].classList.remove('has-mole');moleIdx=-1;}
-    entity=null;
-    if(despawnTimeout){clearTimeout(despawnTimeout);despawnTimeout=null;}
-  }
-
+  function clearMole(){if(moleIdx>=0){HOLES[moleIdx].classList.remove('has-mole');moleIdx=-1;}entity=null;if(despawnTimeout){clearTimeout(despawnTimeout);despawnTimeout=null;}}
   function showEntity(i){
-    clearMole();
-    const hole=HOLES[i],mole=hole.querySelector('.mole');
+    clearMole();const hole=HOLES[i],mole=hole.querySelector('.mole');
     const decoy=Math.random()<DECOY_PROB,quick=!decoy&&Math.random()<QUICK_PEEK_PROB;
-    entity={kind:decoy?'decoy':'dog',hole:i,quick};
-    mole.textContent=decoy?'💩':'🐶';
+    entity={kind:decoy?'decoy':'dog',hole:i,quick};mole.textContent=decoy?'💩':'🐶';
     hole.classList.add('has-mole');moleIdx=i;
-
     const viz=decoy?currentVizMs():(quick?randInt(QUICK_MIN_MS,QUICK_MAX_MS):currentVizMs());
     despawnTimeout=setTimeout(()=>{if(!gameOn)return;if(moleIdx===i){if(entity.kind==='dog'){misses++;taps++;updateHUD();}clearMole();}},viz);
   }
-
-  function updateHUD(){
-    timeEl.textContent=timeLeft; scoreEl.textContent=score; missEl.textContent=misses;
-    accEl.textContent = `${taps?Math.round(score/taps*100):100}%`;
-    timeFill.style.width=`${(timeLeft/GAME_SECONDS)*100}%`;
-  }
-
-  function popup(type,host,txt){
-    const s=document.createElement('div'); s.className=`pop ${type}`; s.textContent=txt;
-    host.appendChild(s); setTimeout(()=>s.remove(),700);
-  }
-
-  function scheduleNext(){
-    if(!gameOn) return;
-    moveTimeout=setTimeout(()=>{ if(!gameOn) return; showEntity(randIdx(moleIdx)); scheduleNext(); }, currentMoveMs());
-  }
-
+  function updateHUD(){timeEl.textContent=timeLeft;scoreEl.textContent=score;missEl.textContent=misses;accEl.textContent=`${taps?Math.round(score/taps*100):100}%`;timeFill.style.width=`${(timeLeft/GAME_SECONDS)*100}%`;}
+  function popup(type,host,txt){const s=document.createElement('div');s.className=`pop ${type}`;s.textContent=txt;host.appendChild(s);setTimeout(()=>s.remove(),700);}
+  function scheduleNext(){if(!gameOn)return;moveTimeout=setTimeout(()=>{if(!gameOn)return;showEntity(randIdx(moleIdx));scheduleNext();},currentMoveMs());}
   function startGame(){
-    score=0;misses=0;taps=0;timeLeft=GAME_SECONDS;streak=0;startedAt=Date.now();
-    updateHUD(); clearMole();
-    if(moveTimeout)clearTimeout(moveTimeout); if(despawnTimeout)clearTimeout(despawnTimeout); clearInterval(tickTimer);
-    gameOn=true; showEntity(randIdx(-1)); scheduleNext();
-    tickTimer=setInterval(()=>{ if(!gameOn) return; timeLeft--; if(timeLeft<=0){timeLeft=0;updateHUD();gameOn=false;clearMole();clearInterval(tickTimer);statusEl.textContent=`Time up. Final score ${score}.`;return;} updateHUD(); },1000);
+    score=0;misses=0;taps=0;timeLeft=GAME_SECONDS;streak=0;startedAt=Date.now();updateHUD();
+    clearMole();if(moveTimeout)clearTimeout(moveTimeout);if(despawnTimeout)clearTimeout(despawnTimeout);
+    clearInterval(tickTimer);gameOn=true;showEntity(randIdx(-1));scheduleNext();
+    tickTimer=setInterval(()=>{if(!gameOn)return;timeLeft--;if(timeLeft<=0){timeLeft=0;updateHUD();gameOn=false;clearMole();clearInterval(tickTimer);statusEl.textContent=`Time up. Final score ${score}.`;return;}updateHUD();},1000);
   }
-
   document.getElementById('board').addEventListener('pointerdown',e=>{
-    if(!gameOn) return;
-    const h=e.target.closest('.hole'); if(!h) return;
-    const idx=+h.dataset.idx; taps++;
-    if(idx===moleIdx && entity){
-      if(entity.kind==='dog'){ score++; streak++; h.classList.add('bonk'); popup('hit',h,'+1'); setTimeout(()=>h.classList.remove('bonk'),150); clearMole(); }
-      else { score=Math.max(0,score-1); misses++; streak=0; popup('penalty',h,'−1'); clearMole(); }
-    } else { misses++; streak=0; popup('miss',h,'miss'); }
+    if(!gameOn)return;const h=e.target.closest('.hole');if(!h)return;const idx=+h.dataset.idx;taps++;
+    if(idx===moleIdx&&entity){if(entity.kind==='dog'){score++;streak++;h.classList.add('bonk');popup('hit',h,'+1');setTimeout(()=>h.classList.remove('bonk'),150);clearMole();}
+      else{score=Math.max(0,score-1);misses++;streak=0;popup('penalty',h,'−1');clearMole();}}
+    else{misses++;streak=0;popup('miss',h,'miss');}
     updateHUD();
   });
-
-  // Remove intro from DOM on start to guarantee it cannot linger
-  function removeIntro(){
-    if(intro && intro.parentNode){ intro.parentNode.removeChild(intro); }
-  }
-  startBtn.addEventListener('click', ()=>{ removeIntro(); startGame(); });
-  window.addEventListener('keydown', e => {
-    if(intro && (e.key==='Enter' || e.code==='Space')){ removeIntro(); startGame(); }
-  });
-
-  restartBtn.addEventListener('click', startGame);
-
+  function removeIntro(){if(intro&&intro.parentNode){intro.parentNode.removeChild(intro);}}
+  startBtn.addEventListener('click',()=>{removeIntro();startGame();});
+  window.addEventListener('keydown',e=>{if(intro&&(e.key==='Enter'||e.code==='Space')){removeIntro();startGame();}});
+  restartBtn.addEventListener('click',startGame);
   updateHUD();
 })();
 </script>
