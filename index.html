@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-<title>Whack-a-Mole — 3×3</title>
+<title>Whack-a-Dog — 3×3</title>
 <style>
   :root{
     --bg:#0a0f1f;
@@ -13,13 +13,12 @@
     --muted:#a9b1d6;
     --ring:#233068;
     --accent:#36d399;
-    --warn:#ffb020;
     --danger:#ff6b6b;
-    --hole:#111a3f;
     --glow:#53ffd0;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
+  [hidden]{display:none !important}
   body{
     margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif; color:var(--ink);
     background:radial-gradient(120% 100% at 50% 0%, #16214a 0%, #0a0f1f 60%, #070a16 100%);
@@ -27,6 +26,7 @@
   }
   .wrap{width:min(900px,100%);}
 
+  /* HUD */
   .hud{
     display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center;
     background:linear-gradient(180deg,#121a3a, #0e1631); border:1px solid var(--ring);
@@ -52,6 +52,7 @@
   button:active{transform:translateY(1px)}
   button[disabled]{opacity:.6; cursor:not-allowed}
 
+  /* Time bar */
   .timebar{
     grid-column:1 / -1; position:relative; height:10px; border-radius:999px; overflow:hidden;
     background:#0b1333; border:1px solid #1e2a55;
@@ -93,6 +94,7 @@
   }
   .hole.has-mole .mole{ transform:translate(-50%, -6%) scale(1); opacity:1; filter:drop-shadow(0 0 10px rgba(83,255,208,.25)) }
 
+  /* Feedback */
   .hole.bonk{ animation:bonk .18s ease }
   .miss-flash{ animation:miss .22s ease }
   @keyframes bonk{ 0%{filter:brightness(1)} 50%{filter:brightness(1.5)} 100%{filter:brightness(1)} }
@@ -111,9 +113,21 @@
   .status{ text-align:center; color:var(--muted); font-size:14px; min-height:1.4em }
   .hole:focus-visible{ outline:3px solid var(--glow); outline-offset:2px }
 
-  @media (prefers-reduced-motion: reduce){
-    .mole,.timebar>.fill, .hole.bonk, .miss-flash, .pop{animation:none; transition:none}
+  /* Intro overlay */
+  .overlay{
+    position:fixed; inset:0; display:grid; place-items:center; z-index:10;
+    background:rgba(10,15,31,.82); backdrop-filter:blur(3px);
   }
+  .modal{
+    width:min(720px,92%); border-radius:18px; padding:18px;
+    background:linear-gradient(180deg,#141d3d,#0f1734);
+    border:1px solid #223169; box-shadow:0 30px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .modal h1{margin:0 0 10px 0; font-size:20px}
+  .modal p{margin:6px 0; color:var(--muted)}
+  .modal ul{margin:10px 0 14px 18px; padding:0; color:var(--muted)}
+  .modal li{margin:6px 0}
+  .modal .actions{display:flex; gap:10px; justify-content:flex-end; margin-top:10px}
 </style>
 </head>
 <body>
@@ -126,14 +140,14 @@
         <div class="pill acc">🎯 <span style="font-weight:800;margin-left:6px">Accuracy:</span> <span id="acc" class="num" style="margin-left:6px">100%</span></div>
       </div>
       <div class="controls">
-        <button id="restartBtn" type="button" aria-label="Restart game">↻ Restart</button>
+        <button id="restartBtn" type="button" aria-label="Restart game" disabled>↻ Restart</button>
       </div>
       <div class="timebar" aria-hidden="true">
         <div id="timeFill" class="fill"></div>
       </div>
     </div>
 
-    <div id="board" class="board" aria-label="Whack-a-mole board" role="grid">
+    <div id="board" class="board" aria-label="Whack-a-dog board" role="grid" aria-disabled="true">
       <!-- 3×3 -->
       <button class="hole" role="gridcell" data-idx="0" aria-label="Hole 1"><div class="mole" aria-hidden="true">🐶</div></button>
       <button class="hole" role="gridcell" data-idx="1" aria-label="Hole 2"><div class="mole" aria-hidden="true">🐶</div></button>
@@ -149,6 +163,23 @@
     <div id="status" class="status" aria-live="polite"></div>
   </div>
 
+  <!-- Intro overlay -->
+  <div id="intro" class="overlay" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+    <div class="modal">
+      <h1 id="introTitle">How to play</h1>
+      <p>30 seconds. Tap only when the dog pops up.</p>
+      <ul>
+        <li>Tap or click a hole when 🐶 is visible to score.</li>
+        <li>Misses are tracked. Accuracy is shown.</li>
+        <li>Keyboard: 1–9 map to the holes.</li>
+        <li>Press Restart to try again after time is up.</li>
+      </ul>
+      <div class="actions">
+        <button id="startBtn" type="button" autofocus>▶ Start</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 (() => {
   const HOLES = Array.from(document.querySelectorAll('.hole'));
@@ -160,6 +191,9 @@
   const statusEl= document.getElementById('status');
   const restartBtn = document.getElementById('restartBtn');
   const board = document.getElementById('board');
+
+  const intro = document.getElementById('intro');
+  const startBtn = document.getElementById('startBtn');
 
   const GAME_SECONDS = 30;
   const MOVE_MS = 850;
@@ -216,6 +250,7 @@
 
   function endGame(){
     gameOn = false;
+    board.setAttribute('aria-disabled', 'true');
     clearInterval(moveTimer); moveTimer = null;
     clearInterval(tickTimer); tickTimer = null;
     clearMole();
@@ -229,6 +264,7 @@
     clearInterval(moveTimer); clearInterval(tickTimer); clearMole();
     restartBtn.disabled = true;
     gameOn = true;
+    board.setAttribute('aria-disabled', 'false');
 
     showMole(randIdx(-1));
 
@@ -245,6 +281,7 @@
     }, 1000);
   }
 
+  // Input
   board.addEventListener('pointerdown', (e) => {
     if (!gameOn) return;
     const hole = e.target.closest('.hole');
@@ -268,7 +305,13 @@
     updateHUD();
   }, { passive:true });
 
+  // Keyboard hotkeys 1–9
   window.addEventListener('keydown', (e) => {
+    // Start with Enter/Space when intro visible
+    if (!gameOn && !intro.hasAttribute('hidden') && (e.key === 'Enter' || e.code === 'Space')) {
+      startBtn.click();
+      return;
+    }
     if (!gameOn) return;
     const n = parseInt(e.key, 10);
     if (n >= 1 && n <= 9) {
@@ -276,8 +319,16 @@
     }
   });
 
+  // Intro controls
+  startBtn.addEventListener('click', () => {
+    intro.setAttribute('hidden','');
+    startGame();
+  });
+
   restartBtn.addEventListener('click', startGame);
-  startGame();
+
+  // Initial HUD state
+  updateHUD();
 })();
 </script>
 </body>
