@@ -3,195 +3,91 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-<title>Whack-a-Dog — Accessible, Ramp Difficulty</title>
+<title>Whack-a-Dog — Hard Mode</title>
 <style>
   :root{
-    /* Contrast-first palette (AA+ on dark) */
-    --bg:#0a0c14;            /* ~#0A0C14 */
-    --panel:#0e1733;         /* dark card */
-    --panel-2:#0b1330;
-    --ink:#ffffff;           /* pure white for max contrast */
-    --muted:#d6e1ff;         /* light, still 4.5:1 on dark */
-    --ring:#6ba7ff;
-    --accent:#22d3ee;        /* cyan */
-    --accent-2:#22c55e;      /* green */
-    --danger:#ff4d4d;        /* red with strong luminance */
-    --track:#061024;
-    --track-ring:#284a8a;
-    --glow:#7dd3fc;
-    --focus:#ffdd57;         /* high-vis focus */
-    --font-scale:1.0;        /* tweak if needed */
+    --bg:#0a0c14; --panel:#0e1733; --ink:#fff; --muted:#d6e1ff;
+    --ring:#6ba7ff; --accent:#22c55e; --cyan:#22d3ee; --danger:#ff4d4d; --focus:#ffdd57;
   }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  [hidden]{display:none !important}
-  body{
-    margin:0; font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
-    color:var(--ink);
-    background:linear-gradient(180deg,#0c1022 0%, #070a14 60%, #05070e 100%);
-    -webkit-tap-highlight-color:transparent; display:flex; align-items:center; justify-content:center; padding:18px;
-    font-size:calc(16px * var(--font-scale));
-  }
+  *{box-sizing:border-box} html,body{height:100%} [hidden]{display:none!important}
+  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+    color:var(--ink);background:linear-gradient(180deg,#0c1022 0%,#070a14 60%,#05070e 100%);
+    display:flex;align-items:center;justify-content:center;padding:18px}
   .wrap{width:min(900px,100%)}
-
-  /* HUD */
-  .hud{
-    display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center;
-    background:var(--panel); border:2px solid var(--track-ring);
-    border-radius:16px; padding:14px; box-shadow:0 12px 30px rgba(0,0,0,.45);
-  }
-  .meters{display:flex; gap:12px 16px; flex-wrap:wrap; align-items:center}
-  .pill{
-    display:inline-flex; align-items:center; gap:10px; padding:10px 14px; border-radius:999px;
-    background:#0c1533; border:2px solid #2b4e96; font-weight:800; letter-spacing:.2px;
-  }
-  .pill .label{opacity:.95}
-  .pill .num{font-variant-numeric:tabular-nums; letter-spacing:.02em}
-  .pill.timer .num{color:var(--accent)}
-  .pill.score .num{color:var(--accent-2)}
-  .pill.misses .num{color:var(--danger)}
+  .hud{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:var(--panel);
+    border:2px solid #284a8a;border-radius:16px;padding:14px}
+  .meters{display:flex;gap:12px 16px;flex-wrap:wrap;align-items:center}
+  .pill{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:999px;background:#0c1533;
+    border:2px solid #2b4e96;font-weight:800}
+  .pill .num{font-variant-numeric:tabular-nums}
+  .pill.timer .num{color:var(--cyan)} .pill.score .num{color:var(--accent)} .pill.misses .num{color:var(--danger)}
   .pill.acc .num{color:#b7faff}
-
-  .controls{display:flex; gap:10px}
-  button{
-    appearance:none; border:2px solid #2b4e96; background:#0f1a3b; color:var(--ink);
-    font-weight:900; padding:12px 16px; border-radius:12px; cursor:pointer;
-    box-shadow:0 6px 18px rgba(0,0,0,.35);
-  }
-  button:active{transform:translateY(1px)}
-  button[disabled]{opacity:.65; cursor:not-allowed}
-  button:focus-visible{outline:3px solid var(--focus); outline-offset:2px}
-
-  /* Time bar */
-  .timebar{
-    grid-column:1 / -1; position:relative; height:12px; border-radius:999px; overflow:hidden;
-    background:var(--track); border:2px solid var(--track-ring);
-  }
-  .timebar > .fill{
-    height:100%; width:100%;
-    background:linear-gradient(90deg,#22d3ee, #60a5fa);
-    box-shadow:0 0 16px rgba(125,211,252,.45) inset;
-    transition:width .25s linear;
-  }
-
-  /* Board */
-  .board{
-    margin:18px auto 10px; width:min(95vmin,680px);
-    display:grid; grid-template-columns:repeat(3,1fr); gap:18px;
-  }
-  .hole{
-    position:relative; aspect-ratio:1/1; border-radius:18px; overflow:hidden; cursor:pointer;
-    background:
-      radial-gradient(60% 60% at 50% 45%, rgba(255,255,255,.09) 0%, rgba(255,255,255,0) 60%),
-      linear-gradient(180deg, #13255b 0%, #0e183c 100%);
-    border:2px solid #2b4e96; box-shadow:inset 0 10px 24px rgba(0,0,0,.45), 0 10px 26px rgba(0,0,0,.35);
-    touch-action:manipulation;
-  }
-  .hole:focus-visible{ outline:4px solid var(--focus); outline-offset:2px }
-  .hole::after{
-    content:""; position:absolute; left:50%; bottom:3%; transform:translateX(-50%);
-    width:76%; height:12%; border-radius:50%;
-    background:radial-gradient(80% 120% at 50% 50%, #081434 0%, #040a1f 85%);
-    filter:blur(.5px);
-  }
-  .hole:hover{outline:2px solid #3b6ad3}
-
-  .mole{
-    position:absolute; left:50%; bottom:0;
-    transform:translate(-50%, 110%) scale(1);
-    font-size:clamp(40px, 10vmin, 90px); line-height:1; user-select:none; pointer-events:none;
-    text-shadow:0 8px 14px rgba(0,0,0,.6);
-    transition:transform .18s cubic-bezier(.2,.8,.2,1), opacity .18s ease, filter .18s ease;
-    opacity:0;
-  }
-  .hole.has-mole .mole{ transform:translate(-50%, -6%) scale(1); opacity:1; filter:drop-shadow(0 0 10px rgba(125,211,252,.35)) }
-
-  /* Feedback */
-  .hole.bonk{ animation:bonk .18s ease }
-  .miss-flash{ animation:miss .22s ease }
-  @keyframes bonk{ 0%{filter:brightness(1)} 50%{filter:brightness(1.6)} 100%{filter:brightness(1)} }
-  @keyframes miss{ 0%{background-color:transparent} 40%{background-color:rgba(255,77,77,.22)} 100%{background-color:transparent} }
-
-  .pop{
-    position:absolute; left:50%; top:35%; transform:translate(-50%, 0);
-    font-weight:1000; font-variant-numeric:tabular-nums; pointer-events:none; user-select:none;
-    text-shadow:0 6px 12px rgba(0,0,0,.6); opacity:0; animation:rise .6s ease forwards;
-    font-size:clamp(18px, 4.6vmin, 30px);
-  }
-  .pop.hit{ color:var(--accent-2) }
-  .pop.miss{ color:var(--danger) }
-  @keyframes rise{ from{transform:translate(-50%, 10px); opacity:0} 30%{opacity:1} to{transform:translate(-50%,-22px); opacity:0} }
-
-  .status{ text-align:center; color:var(--muted); font-size:1rem; min-height:1.5em }
-
-  /* Intro overlay */
-  .overlay{
-    position:fixed; inset:0; display:grid; place-items:center; z-index:10;
-    background:rgba(7,10,20,.82); backdrop-filter:blur(3px);
-  }
-  .modal{
-    width:min(760px,92%); border-radius:18px; padding:18px;
-    background:linear-gradient(180deg,#15235a,#0f1734);
-    border:2px solid var(--track-ring); box-shadow:0 30px 60px rgba(0,0,0,.5);
-  }
-  .modal h1{margin:0 0 10px 0; font-size:1.2rem}
-  .modal p{margin:8px 0; color:var(--ink)}
-  .modal ul{margin:10px 0 14px 20px; padding:0; color:var(--muted); line-height:1.5}
-  .modal li{margin:6px 0}
-  .modal .actions{display:flex; gap:10px; justify-content:flex-end; margin-top:12px}
+  .controls{display:flex;gap:10px}
+  button{appearance:none;border:2px solid #2b4e96;background:#0f1a3b;color:var(--ink);font-weight:900;padding:12px 16px;border-radius:12px;cursor:pointer}
+  button:active{transform:translateY(1px)} button[disabled]{opacity:.65} button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+  .timebar{grid-column:1/-1;position:relative;height:12px;border-radius:999px;overflow:hidden;background:#061024;border:2px solid #284a8a}
+  .timebar>.fill{height:100%;width:100%;background:linear-gradient(90deg,#22d3ee,#60a5fa);transition:width .25s linear}
+  .board{margin:18px auto 10px;width:min(95vmin,680px);display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .hole{position:relative;aspect-ratio:1/1;border-radius:18px;overflow:hidden;cursor:pointer;
+    background:linear-gradient(180deg,#13255b 0%,#0e183c 100%);border:2px solid #2b4e96;touch-action:manipulation}
+  .hole:focus-visible{outline:4px solid var(--focus);outline-offset:2px}
+  .mole{position:absolute;left:50%;bottom:0;transform:translate(-50%,110%);font-size:clamp(40px,10vmin,90px);line-height:1;user-select:none;pointer-events:none;opacity:0;transition:transform .15s ease,opacity .15s ease}
+  .hole.has-mole .mole{transform:translate(-50%,-6%);opacity:1}
+  .hole.bonk{animation:bonk .18s ease} @keyframes bonk{0%{filter:brightness(1)}50%{filter:brightness(1.6)}100%{filter:brightness(1)}}
+  .miss-flash{animation:miss .22s ease} @keyframes miss{0%{background-color:transparent}40%{background-color:rgba(255,77,77,.22)}100%{background-color:transparent}}
+  .pop{position:absolute;left:50%;top:35%;transform:translate(-50%,0);font-weight:1000;font-variant-numeric:tabular-nums;pointer-events:none;user-select:none;opacity:0;animation:rise .6s ease forwards;font-size:clamp(18px,4.6vmin,30px)}
+  .pop.hit{color:var(--accent)} .pop.miss{color:var(--danger)} .pop.penalty{color:var(--danger)}
+  @keyframes rise{from{transform:translate(-50%,10px);opacity:0}30%{opacity:1}to{transform:translate(-50%,-22px);opacity:0}}
+  .status{text-align:center;color:var(--muted);min-height:1.5em}
+  .overlay{position:fixed;inset:0;display:grid;place-items:center;z-index:10;background:rgba(7,10,20,.82);backdrop-filter:blur(3px)}
+  .modal{width:min(760px,92%);border-radius:18px;padding:18px;background:linear-gradient(180deg,#15235a,#0f1734);border:2px solid #284a8a}
+  .modal h1{margin:0 0 10px;font-size:1.2rem} .modal p,.modal li{color:var(--ink)}
+  .modal ul{margin:10px 0 14px 20px;padding:0;line-height:1.5} .modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="hud" role="region" aria-label="Game heads-up display">
       <div class="meters" aria-live="polite">
-        <div class="pill timer" aria-label="Time remaining">
-          ⏱ <span class="label">Time:</span> <span id="time" class="num" aria-live="off">30</span>s
-        </div>
-        <div class="pill score" aria-label="Score">
-          🔨 <span class="label">Score:</span> <span id="score" class="num" aria-live="off">0</span>
-        </div>
-        <div class="pill misses" aria-label="Misses">
-          ❌ <span class="label">Misses:</span> <span id="misses" class="num" aria-live="off">0</span>
-        </div>
-        <div class="pill acc" aria-label="Accuracy">
-          🎯 <span class="label">Accuracy:</span> <span id="acc" class="num" aria-live="off">100%</span>
-        </div>
+        <div class="pill timer">⏱ <span>Time:</span> <span id="time" class="num">30</span>s</div>
+        <div class="pill score">🔨 <span>Score:</span> <span id="score" class="num">0</span></div>
+        <div class="pill misses">❌ <span>Misses:</span> <span id="misses" class="num">0</span></div>
+        <div class="pill acc">🎯 <span>Accuracy:</span> <span id="acc" class="num">100%</span></div>
       </div>
       <div class="controls">
-        <button id="restartBtn" type="button" aria-label="Restart game" disabled>↻ Restart</button>
+        <button id="restartBtn" type="button" disabled>↻ Restart</button>
       </div>
       <div class="timebar" aria-hidden="true">
         <div id="timeFill" class="fill"></div>
       </div>
     </div>
 
-    <div id="board" class="board" aria-label="Whack-a-dog board" role="grid" aria-disabled="true">
-      <!-- 3×3 -->
-      <button class="hole" role="gridcell" data-idx="0" aria-label="Hole 1"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" role="gridcell" data-idx="1" aria-label="Hole 2"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" role="gridcell" data-idx="2" aria-label="Hole 3"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" role="gridcell" data-idx="3" aria-label="Hole 4"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" role="gridcell" data-idx="4" aria-label="Hole 5"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" role="gridcell" data-idx="5" aria-label="Hole 6"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" role="gridcell" data-idx="6" aria-label="Hole 7"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" role="gridcell" data-idx="7" aria-label="Hole 8"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" role="gridcell" data-idx="8" aria-label="Hole 9"><div class="mole" aria-hidden="true">🐶</div></button>
+    <div id="board" class="board" role="grid" aria-disabled="true">
+      <!-- 3×3 holes -->
+      <button class="hole" data-idx="0" aria-label="Hole 1"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" data-idx="1" aria-label="Hole 2"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" data-idx="2" aria-label="Hole 3"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" data-idx="3" aria-label="Hole 4"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" data-idx="4" aria-label="Hole 5"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" data-idx="5" aria-label="Hole 6"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" data-idx="6" aria-label="Hole 7"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" data-idx="7" aria-label="Hole 8"><div class="mole" aria-hidden="true">🐶</div></button>
+      <button class="hole" data-idx="8" aria-label="Hole 9"><div class="mole" aria-hidden="true">🐶</div></button>
     </div>
 
     <div id="status" class="status" aria-live="polite"></div>
   </div>
 
-  <!-- Intro overlay -->
+  <!-- Intro -->
   <div id="intro" class="overlay" role="dialog" aria-modal="true" aria-labelledby="introTitle">
     <div class="modal">
       <h1 id="introTitle">How to play</h1>
-      <p>30 seconds. Tap only when the dog pops up. High-contrast UI for readability.</p>
       <ul>
-        <li>Tap or click a hole when 🐶 is visible to score +1.</li>
-        <li>If you miss or wait too long, it counts as a miss.</li>
-        <li>Difficulty ramps up: faster moves and shorter pop-ups.</li>
-        <li>Keyboard hotkeys: 1–9 map to the holes.</li>
+        <li>Tap when the dog 🐶 pops up to score +1.</li>
+        <li>Hesitate and it hides. That’s a miss.</li>
+        <li>Beware the decoy 💩. Tapping it = −1 score and a miss.</li>
+        <li>Gets faster as you play. Streaks speed it up more.</li>
+        <li>Keys 1–9 work as quick taps.</li>
       </ul>
       <div class="actions">
         <button id="startBtn" type="button" autofocus>▶ Start</button>
@@ -210,35 +106,41 @@
   const statusEl= document.getElementById('status');
   const restartBtn = document.getElementById('restartBtn');
   const board = document.getElementById('board');
-
   const intro = document.getElementById('intro');
   const startBtn = document.getElementById('startBtn');
 
-  /* Game config */
+  /* Core config */
   const GAME_SECONDS = 30;
 
-  /* Difficulty ramp:
-     - Mole move cadence eases from START_MOVE_MS -> END_MOVE_MS over the round
-     - Mole visible window eases from START_VIZ_MS -> END_VIZ_MS over the round
-  */
-  const START_MOVE_MS = 900;
-  const END_MOVE_MS   = 520;
+  /* Base ramp (harder than before) */
+  const START_MOVE_MS = 800;
+  const END_MOVE_MS   = 380;
+  const START_VIZ_MS  = 600;
+  const END_VIZ_MS    = 300;
 
-  const START_VIZ_MS  = 850;
-  const END_VIZ_MS    = 420;
+  /* Challenge spice */
+  const QUICK_PEEK_PROB = 0.22;   // ultra short visibility
+  const QUICK_MIN_MS     = 150;
+  const QUICK_MAX_MS     = 260;
 
-  let score = 0;
-  let misses = 0;
-  let taps = 0;
-  let timeLeft = GAME_SECONDS;
+  const DECOY_PROB       = 0.18;  // 💩 appears; tapping penalizes
+
+  /* Adaptive difficulty via streak */
+  const STREAK_STEP = 3;          // every 3 hits tighten windows
+  const STREAK_MOVE_MULT = 0.94;  // move cadence * 0.94 per step
+  const STREAK_VIZ_MULT  = 0.92;  // visibility * 0.92 per step
+  const MOVE_FLOOR_MS = 260;
+  const VIZ_FLOOR_MS  = 140;
+
+  let score = 0, misses = 0, taps = 0, timeLeft = GAME_SECONDS;
   let moleIdx = -1;
+  let entity = null; // {kind:'dog'|'decoy', hole:i}
   let gameOn = false;
-  let tickTimer = null;
-  let moveTimeout = null;
-  let despawnTimeout = null;
   let startedAt = 0;
+  let tickTimer = null, moveTimeout = null, despawnTimeout = null;
+  let streak = 0;
 
-  const clamp01 = (x) => Math.min(1, Math.max(0, x));
+  const clamp01 = x => Math.min(1, Math.max(0, x));
   const lerp = (a,b,t) => a + (b - a) * t;
 
   function progress(){
@@ -247,18 +149,26 @@
     return clamp01(elapsed / GAME_SECONDS);
   }
 
-  function currentMoveMs(){
-    return Math.round(lerp(START_MOVE_MS, END_MOVE_MS, progress()));
+  function baseMoveMs(){ return Math.round(lerp(START_MOVE_MS, END_MOVE_MS, progress())); }
+  function baseVizMs(){  return Math.round(lerp(START_VIZ_MS,  END_VIZ_MS,  progress())); }
+
+  function streakFactor(mult, floorMs, baseMs){
+    const steps = Math.floor(streak / STREAK_STEP);
+    let ms = baseMs;
+    for (let s=0; s<steps; s++) ms = Math.max(Math.round(ms * mult), floorMs);
+    return ms;
   }
 
+  function currentMoveMs(){
+    return streakFactor(STREAK_MOVE_MULT, MOVE_FLOOR_MS, baseMoveMs());
+  }
   function currentVizMs(){
-    return Math.round(lerp(START_VIZ_MS, END_VIZ_MS, progress()));
+    return streakFactor(STREAK_VIZ_MULT, VIZ_FLOOR_MS, baseVizMs());
   }
 
   function randIdx(exclude){
     if (HOLES.length <= 1) return 0;
-    let i;
-    do { i = (Math.random()*HOLES.length)|0; } while (i === exclude);
+    let i; do { i = (Math.random()*HOLES.length)|0; } while (i === exclude);
     return i;
   }
 
@@ -267,29 +177,43 @@
       HOLES[moleIdx].classList.remove('has-mole');
       moleIdx = -1;
     }
+    entity = null;
     if (despawnTimeout) { clearTimeout(despawnTimeout); despawnTimeout = null; }
   }
 
-  function showMole(i){
+  function showEntity(i){
     clearMole();
-    if (i >= 0) {
-      HOLES[i].classList.add('has-mole');
-      moleIdx = i;
+    const hole = HOLES[i];
+    const emojiEl = hole.querySelector('.mole');
 
-      // Auto-despawn window that gets shorter over time.
-      const viz = currentVizMs();
-      despawnTimeout = setTimeout(() => {
-        // If still up, count as a miss and hide.
-        if (!gameOn) return;
-        if (moleIdx === i) {
-          misses += 1;
-          taps += 1;  // counts as an attempt
+    // Decide what appears: dog, quick dog, or decoy
+    const isDecoy = Math.random() < DECOY_PROB;
+    const isQuick = !isDecoy && Math.random() < QUICK_PEEK_PROB;
+
+    entity = { kind: isDecoy ? 'decoy' : 'dog', hole: i, quick: isQuick };
+    emojiEl.textContent = isDecoy ? '💩' : '🐶';
+
+    hole.classList.add('has-mole');
+    moleIdx = i;
+
+    const viz = isDecoy
+      ? currentVizMs()               // decoy stays normal duration
+      : (isQuick ? randInt(QUICK_MIN_MS, QUICK_MAX_MS) : currentVizMs());
+
+    despawnTimeout = setTimeout(() => {
+      if (!gameOn) return;
+      if (moleIdx === i) {
+        // dog timed out => miss; decoy timeout => neutral
+        if (entity && entity.kind === 'dog') {
+          misses += 1; taps += 1;
           updateHUD();
-          clearMole();
         }
-      }, viz);
-    }
+        clearMole();
+      }
+    }, viz);
   }
+
+  function randInt(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
 
   function setStatus(msg){ statusEl.textContent = msg || ""; }
 
@@ -302,17 +226,17 @@
     timeFill.style.width = `${(timeLeft / GAME_SECONDS) * 100}%`;
   }
 
-  function popup(type, host){
+  function popup(type, host, txt){
     const sp = document.createElement('div');
     sp.className = `pop ${type}`;
-    sp.textContent = type === 'hit' ? '+1' : 'miss';
+    sp.textContent = txt || (type === 'hit' ? '+1' : 'miss');
     host.appendChild(sp);
     setTimeout(() => sp.remove(), 700);
   }
 
   function endGame(){
     gameOn = false;
-    board.setAttribute('aria-disabled', 'true');
+    board.setAttribute('aria-disabled','true');
     if (moveTimeout) { clearTimeout(moveTimeout); moveTimeout = null; }
     if (despawnTimeout){ clearTimeout(despawnTimeout); despawnTimeout = null; }
     clearInterval(tickTimer); tickTimer = null;
@@ -321,32 +245,32 @@
     setStatus(`Time up. Final score ${score}.`);
   }
 
-  function scheduleNextMove(){
+  function scheduleNext(){
     if (!gameOn) return;
     const ms = currentMoveMs();
     moveTimeout = setTimeout(() => {
       if (!gameOn) return;
-      showMole(randIdx(moleIdx));
-      scheduleNextMove(); // schedule the following move with updated ramp
+      showEntity(randIdx(moleIdx));
+      scheduleNext();
     }, ms);
   }
 
-  function startGame(){
-    score = 0; misses = 0; taps = 0; timeLeft = GAME_SECONDS;
-    startedAt = Date.now();
-    updateHUD(); setStatus("Tap only when the dog is up.");
+  function reset(){
+    score=0;misses=0;taps=0;timeLeft=GAME_SECONDS;streak=0;startedAt=Date.now();
+    updateHUD(); setStatus("Tap the dog. Avoid the 💩.");
     if (moveTimeout) clearTimeout(moveTimeout);
     if (despawnTimeout) clearTimeout(despawnTimeout);
     clearInterval(tickTimer);
     clearMole();
-
     restartBtn.disabled = true;
     gameOn = true;
-    board.setAttribute('aria-disabled', 'false');
+    board.setAttribute('aria-disabled','false');
+  }
 
-    showMole(randIdx(-1));
-    scheduleNextMove();
-
+  function startGame(){
+    reset();
+    showEntity(randIdx(-1));
+    scheduleNext();
     tickTimer = setInterval(() => {
       if (!gameOn) return;
       timeLeft -= 1;
@@ -356,52 +280,51 @@
   }
 
   // Input
-  document.getElementById('board').addEventListener('pointerdown', (e) => {
+  board.addEventListener('pointerdown', (e) => {
     if (!gameOn) return;
     const hole = e.target.closest('.hole');
     if (!hole) return;
 
     const idx = Number(hole.dataset.idx);
-    // Count every tap as an attempt for accuracy
     taps += 1;
 
-    if (idx === moleIdx) {
-      score += 1;
-      hole.classList.add('bonk');
-      popup('hit', hole);
-      setTimeout(() => hole.classList.remove('bonk'), 150);
-      clearMole(); // stop the despawn timer too
+    if (idx === moleIdx && entity){
+      if (entity.kind === 'dog'){
+        score += 1; streak += 1;
+        hole.classList.add('bonk'); popup('hit', hole, '+1');
+        setTimeout(() => hole.classList.remove('bonk'), 150);
+        clearMole();
+      } else {
+        // decoy hit: penalty
+        score = Math.max(0, score - 1);
+        misses += 1; streak = 0;
+        document.body.classList.add('miss-flash'); popup('penalty', hole, '−1');
+        setTimeout(() => document.body.classList.remove('miss-flash'), 180);
+        clearMole();
+      }
     } else {
-      misses += 1;
-      document.body.classList.add('miss-flash');
-      popup('miss', hole);
+      // clicked empty or wrong hole
+      misses += 1; streak = 0;
+      document.body.classList.add('miss-flash'); popup('miss', hole, 'miss');
       setTimeout(() => document.body.classList.remove('miss-flash'), 180);
     }
     updateHUD();
   }, { passive:true });
 
-  // Keyboard hotkeys 1–9 and start on Enter/Space
+  // Keys 1–9. Also start with Enter/Space on intro.
   window.addEventListener('keydown', (e) => {
     if (!gameOn && !intro.hasAttribute('hidden') && (e.key === 'Enter' || e.code === 'Space')) {
-      startBtn.click();
-      return;
+      startBtn.click(); return;
     }
     if (!gameOn) return;
     const n = parseInt(e.key, 10);
-    if (n >= 1 && n <= 9) {
-      HOLES[n-1].dispatchEvent(new PointerEvent('pointerdown', {bubbles:true}));
-    }
+    if (n >= 1 && n <= 9) HOLES[n-1].dispatchEvent(new PointerEvent('pointerdown', {bubbles:true}));
   });
 
-  // Intro controls
-  startBtn.addEventListener('click', () => {
-    intro.setAttribute('hidden','');
-    startGame();
-  });
-
+  // Intro + restart
+  startBtn.addEventListener('click', () => { intro.setAttribute('hidden',''); startGame(); });
   restartBtn.addEventListener('click', startGame);
 
-  // Initial HUD state
   updateHUD();
 })();
 </script>
