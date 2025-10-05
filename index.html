@@ -3,141 +3,160 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-<title>Whack-a-Dog — 3×3</title>
+<title>Whack-a-Dog — Accessible, Ramp Difficulty</title>
 <style>
   :root{
-    --bg:#0a0f1f;
-    --panel:#0f1734;
-    --panel-2:#0b1230;
-    --ink:#e9eeff;
-    --muted:#a9b1d6;
-    --ring:#233068;
-    --accent:#36d399;
-    --danger:#ff6b6b;
-    --glow:#53ffd0;
+    /* Contrast-first palette (AA+ on dark) */
+    --bg:#0a0c14;            /* ~#0A0C14 */
+    --panel:#0e1733;         /* dark card */
+    --panel-2:#0b1330;
+    --ink:#ffffff;           /* pure white for max contrast */
+    --muted:#d6e1ff;         /* light, still 4.5:1 on dark */
+    --ring:#6ba7ff;
+    --accent:#22d3ee;        /* cyan */
+    --accent-2:#22c55e;      /* green */
+    --danger:#ff4d4d;        /* red with strong luminance */
+    --track:#061024;
+    --track-ring:#284a8a;
+    --glow:#7dd3fc;
+    --focus:#ffdd57;         /* high-vis focus */
+    --font-scale:1.0;        /* tweak if needed */
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   [hidden]{display:none !important}
   body{
-    margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif; color:var(--ink);
-    background:radial-gradient(120% 100% at 50% 0%, #16214a 0%, #0a0f1f 60%, #070a16 100%);
+    margin:0; font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+    color:var(--ink);
+    background:linear-gradient(180deg,#0c1022 0%, #070a14 60%, #05070e 100%);
     -webkit-tap-highlight-color:transparent; display:flex; align-items:center; justify-content:center; padding:18px;
+    font-size:calc(16px * var(--font-scale));
   }
-  .wrap{width:min(900px,100%);}
+  .wrap{width:min(900px,100%)}
 
   /* HUD */
   .hud{
     display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center;
-    background:linear-gradient(180deg,#121a3a, #0e1631); border:1px solid var(--ring);
-    border-radius:16px; padding:12px 14px; box-shadow:0 12px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+    background:var(--panel); border:2px solid var(--track-ring);
+    border-radius:16px; padding:14px; box-shadow:0 12px 30px rgba(0,0,0,.45);
   }
-  .meters{display:flex; gap:10px 14px; flex-wrap:wrap; align-items:center}
+  .meters{display:flex; gap:12px 16px; flex-wrap:wrap; align-items:center}
   .pill{
-    display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px;
-    background:var(--panel-2); border:1px solid #203163; font-weight:700
+    display:inline-flex; align-items:center; gap:10px; padding:10px 14px; border-radius:999px;
+    background:#0c1533; border:2px solid #2b4e96; font-weight:800; letter-spacing:.2px;
   }
+  .pill .label{opacity:.95}
   .pill .num{font-variant-numeric:tabular-nums; letter-spacing:.02em}
   .pill.timer .num{color:var(--accent)}
+  .pill.score .num{color:var(--accent-2)}
   .pill.misses .num{color:var(--danger)}
-  .pill.acc .num{color:#9ad4ff}
+  .pill.acc .num{color:#b7faff}
 
   .controls{display:flex; gap:10px}
   button{
-    appearance:none; border:1px solid #233062; background:#141d42; color:var(--ink);
-    font-weight:800; padding:10px 14px; border-radius:12px; cursor:pointer;
-    box-shadow:0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
-    transition:transform .06s ease, filter .06s ease, box-shadow .12s ease;
+    appearance:none; border:2px solid #2b4e96; background:#0f1a3b; color:var(--ink);
+    font-weight:900; padding:12px 16px; border-radius:12px; cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.35);
   }
   button:active{transform:translateY(1px)}
-  button[disabled]{opacity:.6; cursor:not-allowed}
+  button[disabled]{opacity:.65; cursor:not-allowed}
+  button:focus-visible{outline:3px solid var(--focus); outline-offset:2px}
 
   /* Time bar */
   .timebar{
-    grid-column:1 / -1; position:relative; height:10px; border-radius:999px; overflow:hidden;
-    background:#0b1333; border:1px solid #1e2a55;
+    grid-column:1 / -1; position:relative; height:12px; border-radius:999px; overflow:hidden;
+    background:var(--track); border:2px solid var(--track-ring);
   }
   .timebar > .fill{
-    height:100%; width:100%; background:linear-gradient(90deg,#4ff3be, #2cc8ff);
-    box-shadow:0 0 16px rgba(83,255,208,.4) inset;
+    height:100%; width:100%;
+    background:linear-gradient(90deg,#22d3ee, #60a5fa);
+    box-shadow:0 0 16px rgba(125,211,252,.45) inset;
     transition:width .25s linear;
   }
 
+  /* Board */
   .board{
-    margin:18px auto 10px; width:min(94vmin,640px);
-    display:grid; grid-template-columns:repeat(3,1fr); gap:16px;
+    margin:18px auto 10px; width:min(95vmin,680px);
+    display:grid; grid-template-columns:repeat(3,1fr); gap:18px;
   }
   .hole{
     position:relative; aspect-ratio:1/1; border-radius:18px; overflow:hidden; cursor:pointer;
     background:
-      radial-gradient(60% 60% at 50% 45%, rgba(255,255,255,.08) 0%, rgba(255,255,255,0) 60%),
-      radial-gradient(80% 80% at 50% 100%, #0b1130 0%, #08102c 35%, transparent 38%),
-      linear-gradient(180deg, #1a2350 0%, #111a3f 100%);
-    border:1px solid #26336b; box-shadow:inset 0 10px 24px rgba(0,0,0,.45), 0 10px 26px rgba(0,0,0,.35);
+      radial-gradient(60% 60% at 50% 45%, rgba(255,255,255,.09) 0%, rgba(255,255,255,0) 60%),
+      linear-gradient(180deg, #13255b 0%, #0e183c 100%);
+    border:2px solid #2b4e96; box-shadow:inset 0 10px 24px rgba(0,0,0,.45), 0 10px 26px rgba(0,0,0,.35);
     touch-action:manipulation;
   }
+  .hole:focus-visible{ outline:4px solid var(--focus); outline-offset:2px }
   .hole::after{
     content:""; position:absolute; left:50%; bottom:3%; transform:translateX(-50%);
-    width:76%; height:10%; border-radius:50%;
-    background:radial-gradient(80% 120% at 50% 50%, #0a1231 0%, #050a1f 85%);
+    width:76%; height:12%; border-radius:50%;
+    background:radial-gradient(80% 120% at 50% 50%, #081434 0%, #040a1f 85%);
     filter:blur(.5px);
   }
-  .hole:hover{outline:1px solid #2a3977}
+  .hole:hover{outline:2px solid #3b6ad3}
 
   .mole{
     position:absolute; left:50%; bottom:0;
-    transform:translate(-50%, 110%) scale(.95);
-    font-size:clamp(32px, 9vmin, 80px); line-height:1; user-select:none; pointer-events:none;
-    text-shadow:0 8px 14px rgba(0,0,0,.5);
+    transform:translate(-50%, 110%) scale(1);
+    font-size:clamp(40px, 10vmin, 90px); line-height:1; user-select:none; pointer-events:none;
+    text-shadow:0 8px 14px rgba(0,0,0,.6);
     transition:transform .18s cubic-bezier(.2,.8,.2,1), opacity .18s ease, filter .18s ease;
     opacity:0;
   }
-  .hole.has-mole .mole{ transform:translate(-50%, -6%) scale(1); opacity:1; filter:drop-shadow(0 0 10px rgba(83,255,208,.25)) }
+  .hole.has-mole .mole{ transform:translate(-50%, -6%) scale(1); opacity:1; filter:drop-shadow(0 0 10px rgba(125,211,252,.35)) }
 
   /* Feedback */
   .hole.bonk{ animation:bonk .18s ease }
   .miss-flash{ animation:miss .22s ease }
-  @keyframes bonk{ 0%{filter:brightness(1)} 50%{filter:brightness(1.5)} 100%{filter:brightness(1)} }
-  @keyframes miss{ 0%{background-color:transparent} 40%{background-color:rgba(255,107,107,.18)} 100%{background-color:transparent} }
+  @keyframes bonk{ 0%{filter:brightness(1)} 50%{filter:brightness(1.6)} 100%{filter:brightness(1)} }
+  @keyframes miss{ 0%{background-color:transparent} 40%{background-color:rgba(255,77,77,.22)} 100%{background-color:transparent} }
 
   .pop{
     position:absolute; left:50%; top:35%; transform:translate(-50%, 0);
-    font-weight:900; font-variant-numeric:tabular-nums; pointer-events:none; user-select:none;
-    text-shadow:0 6px 12px rgba(0,0,0,.5); opacity:0; animation:rise .6s ease forwards;
-    font-size:clamp(16px, 4.2vmin, 28px);
+    font-weight:1000; font-variant-numeric:tabular-nums; pointer-events:none; user-select:none;
+    text-shadow:0 6px 12px rgba(0,0,0,.6); opacity:0; animation:rise .6s ease forwards;
+    font-size:clamp(18px, 4.6vmin, 30px);
   }
-  .pop.hit{ color:var(--accent) }
+  .pop.hit{ color:var(--accent-2) }
   .pop.miss{ color:var(--danger) }
   @keyframes rise{ from{transform:translate(-50%, 10px); opacity:0} 30%{opacity:1} to{transform:translate(-50%,-22px); opacity:0} }
 
-  .status{ text-align:center; color:var(--muted); font-size:14px; min-height:1.4em }
-  .hole:focus-visible{ outline:3px solid var(--glow); outline-offset:2px }
+  .status{ text-align:center; color:var(--muted); font-size:1rem; min-height:1.5em }
 
   /* Intro overlay */
   .overlay{
     position:fixed; inset:0; display:grid; place-items:center; z-index:10;
-    background:rgba(10,15,31,.82); backdrop-filter:blur(3px);
+    background:rgba(7,10,20,.82); backdrop-filter:blur(3px);
   }
   .modal{
-    width:min(720px,92%); border-radius:18px; padding:18px;
-    background:linear-gradient(180deg,#141d3d,#0f1734);
-    border:1px solid #223169; box-shadow:0 30px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05);
+    width:min(760px,92%); border-radius:18px; padding:18px;
+    background:linear-gradient(180deg,#15235a,#0f1734);
+    border:2px solid var(--track-ring); box-shadow:0 30px 60px rgba(0,0,0,.5);
   }
-  .modal h1{margin:0 0 10px 0; font-size:20px}
-  .modal p{margin:6px 0; color:var(--muted)}
-  .modal ul{margin:10px 0 14px 18px; padding:0; color:var(--muted)}
+  .modal h1{margin:0 0 10px 0; font-size:1.2rem}
+  .modal p{margin:8px 0; color:var(--ink)}
+  .modal ul{margin:10px 0 14px 20px; padding:0; color:var(--muted); line-height:1.5}
   .modal li{margin:6px 0}
-  .modal .actions{display:flex; gap:10px; justify-content:flex-end; margin-top:10px}
+  .modal .actions{display:flex; gap:10px; justify-content:flex-end; margin-top:12px}
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="hud" role="region" aria-label="Game heads-up display">
-      <div class="meters">
-        <div class="pill timer">⏱️ <span style="font-weight:800;margin-left:6px">Time:</span> <span id="time" class="num" style="margin-left:6px">30</span>s</div>
-        <div class="pill score">🔨 <span style="font-weight:800;margin-left:6px">Score:</span> <span id="score" class="num" style="margin-left:6px">0</span></div>
-        <div class="pill misses">❌ <span style="font-weight:800;margin-left:6px">Misses:</span> <span id="misses" class="num" style="margin-left:6px">0</span></div>
-        <div class="pill acc">🎯 <span style="font-weight:800;margin-left:6px">Accuracy:</span> <span id="acc" class="num" style="margin-left:6px">100%</span></div>
+      <div class="meters" aria-live="polite">
+        <div class="pill timer" aria-label="Time remaining">
+          ⏱ <span class="label">Time:</span> <span id="time" class="num" aria-live="off">30</span>s
+        </div>
+        <div class="pill score" aria-label="Score">
+          🔨 <span class="label">Score:</span> <span id="score" class="num" aria-live="off">0</span>
+        </div>
+        <div class="pill misses" aria-label="Misses">
+          ❌ <span class="label">Misses:</span> <span id="misses" class="num" aria-live="off">0</span>
+        </div>
+        <div class="pill acc" aria-label="Accuracy">
+          🎯 <span class="label">Accuracy:</span> <span id="acc" class="num" aria-live="off">100%</span>
+        </div>
       </div>
       <div class="controls">
         <button id="restartBtn" type="button" aria-label="Restart game" disabled>↻ Restart</button>
@@ -167,12 +186,12 @@
   <div id="intro" class="overlay" role="dialog" aria-modal="true" aria-labelledby="introTitle">
     <div class="modal">
       <h1 id="introTitle">How to play</h1>
-      <p>30 seconds. Tap only when the dog pops up.</p>
+      <p>30 seconds. Tap only when the dog pops up. High-contrast UI for readability.</p>
       <ul>
-        <li>Tap or click a hole when 🐶 is visible to score.</li>
-        <li>Misses are tracked. Accuracy is shown.</li>
-        <li>Keyboard: 1–9 map to the holes.</li>
-        <li>Press Restart to try again after time is up.</li>
+        <li>Tap or click a hole when 🐶 is visible to score +1.</li>
+        <li>If you miss or wait too long, it counts as a miss.</li>
+        <li>Difficulty ramps up: faster moves and shorter pop-ups.</li>
+        <li>Keyboard hotkeys: 1–9 map to the holes.</li>
       </ul>
       <div class="actions">
         <button id="startBtn" type="button" autofocus>▶ Start</button>
@@ -195,8 +214,18 @@
   const intro = document.getElementById('intro');
   const startBtn = document.getElementById('startBtn');
 
+  /* Game config */
   const GAME_SECONDS = 30;
-  const MOVE_MS = 850;
+
+  /* Difficulty ramp:
+     - Mole move cadence eases from START_MOVE_MS -> END_MOVE_MS over the round
+     - Mole visible window eases from START_VIZ_MS -> END_VIZ_MS over the round
+  */
+  const START_MOVE_MS = 900;
+  const END_MOVE_MS   = 520;
+
+  const START_VIZ_MS  = 850;
+  const END_VIZ_MS    = 420;
 
   let score = 0;
   let misses = 0;
@@ -204,8 +233,27 @@
   let timeLeft = GAME_SECONDS;
   let moleIdx = -1;
   let gameOn = false;
-  let moveTimer = null;
   let tickTimer = null;
+  let moveTimeout = null;
+  let despawnTimeout = null;
+  let startedAt = 0;
+
+  const clamp01 = (x) => Math.min(1, Math.max(0, x));
+  const lerp = (a,b,t) => a + (b - a) * t;
+
+  function progress(){
+    if (!startedAt) return 0;
+    const elapsed = (Date.now() - startedAt) / 1000;
+    return clamp01(elapsed / GAME_SECONDS);
+  }
+
+  function currentMoveMs(){
+    return Math.round(lerp(START_MOVE_MS, END_MOVE_MS, progress()));
+  }
+
+  function currentVizMs(){
+    return Math.round(lerp(START_VIZ_MS, END_VIZ_MS, progress()));
+  }
 
   function randIdx(exclude){
     if (HOLES.length <= 1) return 0;
@@ -214,18 +262,32 @@
     return i;
   }
 
+  function clearMole(){
+    if (moleIdx >= 0) {
+      HOLES[moleIdx].classList.remove('has-mole');
+      moleIdx = -1;
+    }
+    if (despawnTimeout) { clearTimeout(despawnTimeout); despawnTimeout = null; }
+  }
+
   function showMole(i){
     clearMole();
     if (i >= 0) {
       HOLES[i].classList.add('has-mole');
       moleIdx = i;
-    }
-  }
 
-  function clearMole(){
-    if (moleIdx >= 0) {
-      HOLES[moleIdx].classList.remove('has-mole');
-      moleIdx = -1;
+      // Auto-despawn window that gets shorter over time.
+      const viz = currentVizMs();
+      despawnTimeout = setTimeout(() => {
+        // If still up, count as a miss and hide.
+        if (!gameOn) return;
+        if (moleIdx === i) {
+          misses += 1;
+          taps += 1;  // counts as an attempt
+          updateHUD();
+          clearMole();
+        }
+      }, viz);
     }
   }
 
@@ -251,27 +313,39 @@
   function endGame(){
     gameOn = false;
     board.setAttribute('aria-disabled', 'true');
-    clearInterval(moveTimer); moveTimer = null;
+    if (moveTimeout) { clearTimeout(moveTimeout); moveTimeout = null; }
+    if (despawnTimeout){ clearTimeout(despawnTimeout); despawnTimeout = null; }
     clearInterval(tickTimer); tickTimer = null;
     clearMole();
     restartBtn.disabled = false;
     setStatus(`Time up. Final score ${score}.`);
   }
 
+  function scheduleNextMove(){
+    if (!gameOn) return;
+    const ms = currentMoveMs();
+    moveTimeout = setTimeout(() => {
+      if (!gameOn) return;
+      showMole(randIdx(moleIdx));
+      scheduleNextMove(); // schedule the following move with updated ramp
+    }, ms);
+  }
+
   function startGame(){
     score = 0; misses = 0; taps = 0; timeLeft = GAME_SECONDS;
+    startedAt = Date.now();
     updateHUD(); setStatus("Tap only when the dog is up.");
-    clearInterval(moveTimer); clearInterval(tickTimer); clearMole();
+    if (moveTimeout) clearTimeout(moveTimeout);
+    if (despawnTimeout) clearTimeout(despawnTimeout);
+    clearInterval(tickTimer);
+    clearMole();
+
     restartBtn.disabled = true;
     gameOn = true;
     board.setAttribute('aria-disabled', 'false');
 
     showMole(randIdx(-1));
-
-    moveTimer = setInterval(() => {
-      if (!gameOn) return;
-      showMole(randIdx(moleIdx));
-    }, MOVE_MS);
+    scheduleNextMove();
 
     tickTimer = setInterval(() => {
       if (!gameOn) return;
@@ -282,20 +356,21 @@
   }
 
   // Input
-  board.addEventListener('pointerdown', (e) => {
+  document.getElementById('board').addEventListener('pointerdown', (e) => {
     if (!gameOn) return;
     const hole = e.target.closest('.hole');
     if (!hole) return;
 
-    taps += 1;
     const idx = Number(hole.dataset.idx);
+    // Count every tap as an attempt for accuracy
+    taps += 1;
 
     if (idx === moleIdx) {
       score += 1;
       hole.classList.add('bonk');
       popup('hit', hole);
       setTimeout(() => hole.classList.remove('bonk'), 150);
-      clearMole();
+      clearMole(); // stop the despawn timer too
     } else {
       misses += 1;
       document.body.classList.add('miss-flash');
@@ -305,9 +380,8 @@
     updateHUD();
   }, { passive:true });
 
-  // Keyboard hotkeys 1–9
+  // Keyboard hotkeys 1–9 and start on Enter/Space
   window.addEventListener('keydown', (e) => {
-    // Start with Enter/Space when intro visible
     if (!gameOn && !intro.hasAttribute('hidden') && (e.key === 'Enter' || e.code === 'Space')) {
       startBtn.click();
       return;
