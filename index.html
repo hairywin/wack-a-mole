@@ -3,139 +3,115 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
-<title>Whack-a-Dog — Hard Mode</title>
+<title>Whack-a-Dog — Hard Mode (Mobile Optimized)</title>
 <style>
   :root{
     --bg:#0a0c14; --panel:#0e1733; --ink:#fff; --muted:#d6e1ff;
     --ring:#6ba7ff; --accent:#22c55e; --cyan:#22d3ee; --danger:#ff4d4d; --focus:#ffdd57;
   }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  [hidden]{display:none!important}
-
-  /* Mobile-safe spacing */
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100svh;overflow:hidden;background:linear-gradient(180deg,#0c1022 0%,#070a14 60%,#05070e 100%)}
   body{
-    margin:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:space-between;
     font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
-    color:var(--ink);
-    background:linear-gradient(180deg,#0c1022 0%,#070a14 60%,#05070e 100%);
-    min-height:100svh;
-    display:flex; align-items:flex-start; justify-content:center;
-    padding: calc(14px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));
+    color:var(--ink);padding:env(safe-area-inset-top) 10px env(safe-area-inset-bottom);
   }
-  .wrap{width:min(900px,100%); margin-top:6px}
-
+  .wrap{width:100%;max-width:800px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%}
   .hud{
-    display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center;
-    background:var(--panel); border:2px solid #284a8a; border-radius:16px; padding:14px;
-    box-shadow:0 12px 30px rgba(0,0,0,.45);
+    display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
+    background:var(--panel);border:2px solid #284a8a;border-radius:12px;padding:10px 12px;
+    width:100%;box-shadow:0 8px 20px rgba(0,0,0,.4);
   }
-  .meters{display:flex; gap:12px 16px; flex-wrap:wrap; align-items:center}
+  .meters{display:flex;gap:8px 12px;flex-wrap:wrap;align-items:center}
   .pill{
-    display:inline-flex; align-items:center; gap:10px; padding:10px 14px; border-radius:999px;
-    background:#0c1533; border:2px solid #2b4e96; font-weight:800
+    display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;
+    background:#0c1533;border:2px solid #2b4e96;font-weight:800;font-size:clamp(12px,3vw,16px)
   }
   .pill .num{font-variant-numeric:tabular-nums}
   .pill.timer .num{color:var(--cyan)} .pill.score .num{color:var(--accent)} .pill.misses .num{color:var(--danger)}
   .pill.acc .num{color:#b7faff}
-
-  .controls{display:flex; gap:10px}
+  .controls{display:flex;gap:10px}
   button{
-    appearance:none; border:2px solid #2b4e96; background:#0f1a3b; color:var(--ink);
-    font-weight:900; padding:12px 16px; border-radius:12px; cursor:pointer;
+    appearance:none;border:2px solid #2b4e96;background:#0f1a3b;color:var(--ink);
+    font-weight:800;padding:8px 12px;border-radius:10px;cursor:pointer;
   }
-  button:active{transform:translateY(1px)}
-  button:focus-visible{outline:3px solid var(--focus); outline-offset:2px}
-
-  .timebar{grid-column:1/-1; position:relative; height:12px; border-radius:999px; overflow:hidden;
-    background:#061024; border:2px solid #284a8a}
-  .timebar>.fill{height:100%; width:100%; background:linear-gradient(90deg,#22d3ee,#60a5fa); transition:width .25s linear}
+  button:active{transform:translateY(1px)} button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+  .timebar{grid-column:1/-1;position:relative;height:8px;border-radius:999px;overflow:hidden;background:#061024;border:2px solid #284a8a;margin-top:4px}
+  .timebar>.fill{height:100%;width:100%;background:linear-gradient(90deg,#22d3ee,#60a5fa);transition:width .25s linear}
 
   .board{
-    margin:18px auto 10px; width:min(95vmin,680px);
-    display:grid; grid-template-columns:repeat(3,1fr); gap:18px;
+    flex:1;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+    width:min(90vmin,550px);max-height:60vh;aspect-ratio:1/1;
+    margin-top:10px;
   }
   .hole{
-    position:relative; aspect-ratio:1/1; border-radius:18px; overflow:hidden; cursor:pointer;
-    background:linear-gradient(180deg,#13255b 0%,#0e183c 100%); border:2px solid #2b4e96; touch-action:manipulation;
+    position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;cursor:pointer;
+    background:linear-gradient(180deg,#13255b 0%,#0e183c 100%);border:2px solid #2b4e96;touch-action:manipulation;
   }
-  .hole:focus-visible{outline:4px solid var(--focus); outline-offset:2px}
+  .hole:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
   .mole{
-    position:absolute; left:50%; bottom:0; transform:translate(-50%,110%);
-    font-size:clamp(40px,10vmin,90px); line-height:1; user-select:none; pointer-events:none; opacity:0;
-    transition:transform .15s ease, opacity .15s ease;
+    position:absolute;left:50%;bottom:0;transform:translate(-50%,110%);
+    font-size:clamp(32px,8vmin,70px);line-height:1;user-select:none;pointer-events:none;opacity:0;
+    transition:transform .15s ease,opacity .15s ease;
   }
-  .hole.has-mole .mole{transform:translate(-50%,-6%); opacity:1}
-
-  .hole.bonk{animation:bonk .18s ease}
-  @keyframes bonk{0%{filter:brightness(1)}50%{filter:brightness(1.6)}100%{filter:brightness(1)}}
-  .miss-flash{animation:miss .22s ease}
-  @keyframes miss{0%{background-color:transparent}40%{background-color:rgba(255,77,77,.22)}100%{background-color:transparent}}
-
-  .pop{position:absolute; left:50%; top:35%; transform:translate(-50%,0); font-weight:1000;
-    font-variant-numeric:tabular-nums; pointer-events:none; user-select:none; opacity:0;
-    animation:rise .6s ease forwards; font-size:clamp(18px,4.6vmin,30px)}
+  .hole.has-mole .mole{transform:translate(-50%,-6%);opacity:1}
+  .hole.bonk{animation:bonk .18s ease}@keyframes bonk{0%{filter:brightness(1)}50%{filter:brightness(1.6)}100%{filter:brightness(1)}}
+  .miss-flash{animation:miss .22s ease}@keyframes miss{0%{background-color:transparent}40%{background-color:rgba(255,77,77,.22)}100%{background-color:transparent}}
+  .pop{position:absolute;left:50%;top:35%;transform:translate(-50%,0);font-weight:1000;font-size:clamp(14px,4.2vmin,22px);
+    pointer-events:none;user-select:none;opacity:0;animation:rise .6s ease forwards}
   .pop.hit{color:var(--accent)} .pop.miss,.pop.penalty{color:var(--danger)}
   @keyframes rise{from{transform:translate(-50%,10px);opacity:0}30%{opacity:1}to{transform:translate(-50%,-22px);opacity:0}}
-
-  .status{text-align:center; color:var(--muted); min-height:1.5em}
-
+  .status{text-align:center;color:var(--muted);font-size:clamp(12px,3vw,15px);min-height:1.2em;margin-top:4px}
   .overlay{
-    position:fixed; inset:0; display:grid; place-items:center; z-index:10;
-    background:rgba(7,10,20,.82); backdrop-filter:blur(3px);
-    padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
+    position:fixed;inset:0;display:grid;place-items:center;z-index:10;
+    background:rgba(7,10,20,.85);backdrop-filter:blur(4px);
+    padding:calc(10px + env(safe-area-inset-top)) 12px calc(10px + env(safe-area-inset-bottom));
   }
-  .modal{width:min(760px,100%); border-radius:18px; padding:18px; background:linear-gradient(180deg,#15235a,#0f1734);
-    border:2px solid #284a8a}
-  .modal h1{margin:0 0 10px; font-size:1.2rem}
-  .modal ul{margin:10px 0 14px 20px; padding:0; line-height:1.5}
+  .modal{width:min(90%,500px);border-radius:14px;padding:16px;background:linear-gradient(180deg,#15235a,#0f1734);
+    border:2px solid #284a8a;text-align:left}
+  .modal h1{margin:0 0 8px;font-size:1.1rem}
+  .modal ul{margin:8px 0 10px 18px;padding:0;line-height:1.5}
 </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="hud" role="region" aria-label="Game heads-up display">
-      <div class="meters" aria-live="polite">
+    <div class="hud">
+      <div class="meters">
         <div class="pill timer">⏱ <span>Time:</span> <span id="time" class="num">30</span>s</div>
         <div class="pill score">🔨 <span>Score:</span> <span id="score" class="num">0</span></div>
         <div class="pill misses">❌ <span>Misses:</span> <span id="misses" class="num">0</span></div>
-        <div class="pill acc">🎯 <span>Accuracy:</span> <span id="acc" class="num">100%</span></div>
+        <div class="pill acc">🎯 <span>Acc:</span> <span id="acc" class="num">100%</span></div>
       </div>
-      <div class="controls">
-        <!-- Always clickable -->
-        <button id="restartBtn" type="button">↻ Restart</button>
-      </div>
-      <div class="timebar" aria-hidden="true"><div id="timeFill" class="fill"></div></div>
+      <button id="restartBtn" type="button">↻ Restart</button>
+      <div class="timebar"><div id="timeFill" class="fill"></div></div>
     </div>
 
-    <div id="board" class="board" role="grid" aria-disabled="true">
-      <button class="hole" data-idx="0" aria-label="Hole 1"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" data-idx="1" aria-label="Hole 2"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" data-idx="2" aria-label="Hole 3"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" data-idx="3" aria-label="Hole 4"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" data-idx="4" aria-label="Hole 5"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" data-idx="5" aria-label="Hole 6"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" data-idx="6" aria-label="Hole 7"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" data-idx="7" aria-label="Hole 8"><div class="mole" aria-hidden="true">🐶</div></button>
-      <button class="hole" data-idx="8" aria-label="Hole 9"><div class="mole" aria-hidden="true">🐶</div></button>
+    <div id="board" class="board">
+      <button class="hole" data-idx="0"><div class="mole">🐶</div></button>
+      <button class="hole" data-idx="1"><div class="mole">🐶</div></button>
+      <button class="hole" data-idx="2"><div class="mole">🐶</div></button>
+      <button class="hole" data-idx="3"><div class="mole">🐶</div></button>
+      <button class="hole" data-idx="4"><div class="mole">🐶</div></button>
+      <button class="hole" data-idx="5"><div class="mole">🐶</div></button>
+      <button class="hole" data-idx="6"><div class="mole">🐶</div></button>
+      <button class="hole" data-idx="7"><div class="mole">🐶</div></button>
+      <button class="hole" data-idx="8"><div class="mole">🐶</div></button>
     </div>
 
-    <div id="status" class="status" aria-live="polite"></div>
+    <div id="status" class="status"></div>
   </div>
 
-  <!-- Intro -->
-  <div id="intro" class="overlay" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+  <div id="intro" class="overlay">
     <div class="modal">
-      <h1 id="introTitle">How to play</h1>
+      <h1>How to play</h1>
       <ul>
         <li>Tap when the dog 🐶 pops up to score +1.</li>
-        <li>Hesitate and it hides. That’s a miss.</li>
-        <li>Beware the decoy 💩. Tapping it = −1 score and a miss.</li>
-        <li>Gets faster as you play. Streaks speed it up more.</li>
-        <li>Keys 1–9 work as quick taps.</li>
+        <li>Hesitate and it hides — miss.</li>
+        <li>Tap 💩 = −1 score and miss.</li>
+        <li>Speeds up as you hit streaks.</li>
       </ul>
-      <div class="actions">
-        <button id="startBtn" type="button" autofocus>▶ Start</button>
-      </div>
+      <button id="startBtn">▶ Start</button>
     </div>
   </div>
 
@@ -149,181 +125,50 @@
   const timeFill= document.getElementById('timeFill');
   const statusEl= document.getElementById('status');
   const restartBtn = document.getElementById('restartBtn');
-  const board = document.getElementById('board');
   const intro = document.getElementById('intro');
   const startBtn = document.getElementById('startBtn');
 
-  /* Core config */
-  const GAME_SECONDS = 30;
-
-  /* Hard ramp */
-  const START_MOVE_MS = 800, END_MOVE_MS = 380;
-  const START_VIZ_MS  = 600, END_VIZ_MS  = 300;
-
-  const QUICK_PEEK_PROB = 0.22, QUICK_MIN_MS = 150, QUICK_MAX_MS = 260;
-  const DECOY_PROB = 0.18;
-
-  const STREAK_STEP = 3, STREAK_MOVE_MULT = 0.94, STREAK_VIZ_MULT = 0.92;
-  const MOVE_FLOOR_MS = 260, VIZ_FLOOR_MS = 140;
-
-  let score=0, misses=0, taps=0, timeLeft=GAME_SECONDS;
-  let moleIdx=-1, entity=null;
-  let gameOn=false, startedAt=0;
-  let tickTimer=null, moveTimeout=null, despawnTimeout=null;
-  let streak=0;
-
-  const clamp01 = x => Math.min(1, Math.max(0, x));
-  const lerp = (a,b,t) => a + (b - a) * t;
-
-  function progress(){
-    if (!startedAt) return 0;
-    const elapsed = (Date.now() - startedAt) / 1000;
-    return clamp01(elapsed / GAME_SECONDS);
-  }
-  function baseMoveMs(){ return Math.round(lerp(START_MOVE_MS, END_MOVE_MS, progress())); }
-  function baseVizMs(){  return Math.round(lerp(START_VIZ_MS,  END_VIZ_MS,  progress())); }
-  function streakFactor(mult, floorMs, baseMs){
-    const steps = Math.floor(streak / STREAK_STEP);
-    let ms = baseMs;
-    for (let s=0; s<steps; s++) ms = Math.max(Math.round(ms * mult), floorMs);
-    return ms;
-  }
-  function currentMoveMs(){ return streakFactor(STREAK_MOVE_MULT, MOVE_FLOOR_MS, baseMoveMs()); }
-  function currentVizMs(){  return streakFactor(STREAK_VIZ_MULT,  VIZ_FLOOR_MS,  baseVizMs()); }
-
-  function randIdx(exclude){ let i; do { i = (Math.random()*HOLES.length)|0; } while (i === exclude); return i; }
-  function randInt(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
-
-  function clearMole(){
-    if (moleIdx >= 0) { HOLES[moleIdx].classList.remove('has-mole'); moleIdx = -1; }
-    entity = null;
-    if (despawnTimeout) { clearTimeout(despawnTimeout); despawnTimeout = null; }
-  }
-
+  const GAME_SECONDS=30,START_MOVE_MS=800,END_MOVE_MS=380,START_VIZ_MS=600,END_VIZ_MS=300;
+  const QUICK_PEEK_PROB=.22,QUICK_MIN_MS=150,QUICK_MAX_MS=260,DECOY_PROB=.18;
+  const STREAK_STEP=3,STREAK_MOVE_MULT=.94,STREAK_VIZ_MULT=.92,MOVE_FLOOR_MS=260,VIZ_FLOOR_MS=140;
+  let score=0,misses=0,taps=0,timeLeft=GAME_SECONDS,moleIdx=-1,entity=null,gameOn=false,startedAt=0;
+  let tickTimer=null,moveTimeout=null,despawnTimeout=null,streak=0;
+  const lerp=(a,b,t)=>a+(b-a)*t;const clamp01=x=>Math.min(1,Math.max(0,x));
+  function progress(){return clamp01((Date.now()-startedAt)/1000/GAME_SECONDS);}
+  function baseMoveMs(){return Math.round(lerp(START_MOVE_MS,END_MOVE_MS,progress()));}
+  function baseVizMs(){return Math.round(lerp(START_VIZ_MS,END_VIZ_MS,progress()));}
+  function streakFactor(mult,floor,base){let s=Math.floor(streak/STREAK_STEP),ms=base;for(let i=0;i<s;i++)ms=Math.max(Math.round(ms*mult),floor);return ms;}
+  function currentMoveMs(){return streakFactor(STREAK_MOVE_MULT,MOVE_FLOOR_MS,baseMoveMs());}
+  function currentVizMs(){return streakFactor(STREAK_VIZ_MULT,VIZ_FLOOR_MS,baseVizMs());}
+  function randIdx(ex){let i;do{i=(Math.random()*HOLES.length)|0;}while(i===ex);return i;}
+  function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1));}
+  function clearMole(){if(moleIdx>=0){HOLES[moleIdx].classList.remove('has-mole');moleIdx=-1;}entity=null;if(despawnTimeout){clearTimeout(despawnTimeout);despawnTimeout=null;}}
   function showEntity(i){
-    clearMole();
-    const hole = HOLES[i];
-    const emojiEl = hole.querySelector('.mole');
-
-    const isDecoy = Math.random() < DECOY_PROB;
-    const isQuick = !isDecoy && Math.random() < QUICK_PEEK_PROB;
-
-    entity = { kind: isDecoy ? 'decoy' : 'dog', hole: i, quick: isQuick };
-    emojiEl.textContent = isDecoy ? '💩' : '🐶';
-
-    hole.classList.add('has-mole');
-    moleIdx = i;
-
-    const viz = isDecoy ? currentVizMs() : (isQuick ? randInt(QUICK_MIN_MS, QUICK_MAX_MS) : currentVizMs());
-    despawnTimeout = setTimeout(() => {
-      if (!gameOn) return;
-      if (moleIdx === i) {
-        if (entity && entity.kind === 'dog') { misses += 1; taps += 1; updateHUD(); }
-        clearMole();
-      }
-    }, viz);
+    clearMole();const hole=HOLES[i],mole=hole.querySelector('.mole');
+    const decoy=Math.random()<DECOY_PROB,quick=!decoy&&Math.random()<QUICK_PEEK_PROB;
+    entity={kind:decoy?'decoy':'dog',hole:i,quick};mole.textContent=decoy?'💩':'🐶';
+    hole.classList.add('has-mole');moleIdx=i;
+    const viz=decoy?currentVizMs():(quick?randInt(QUICK_MIN_MS,QUICK_MAX_MS):currentVizMs());
+    despawnTimeout=setTimeout(()=>{if(!gameOn)return;if(moleIdx===i){if(entity.kind==='dog'){misses++;taps++;updateHUD();}clearMole();}},viz);
   }
-
-  function setStatus(msg){ statusEl.textContent = msg || ""; }
-  function updateHUD(){
-    timeEl.textContent = timeLeft.toString();
-    scoreEl.textContent = score.toString();
-    missEl.textContent  = misses.toString();
-    const acc = taps ? Math.round((score / taps) * 100) : 100;
-    accEl.textContent = `${acc}%`;
-    timeFill.style.width = `${(timeLeft / GAME_SECONDS) * 100}%`;
-  }
-
-  function popup(type, host, txt){
-    const sp = document.createElement('div');
-    sp.className = `pop ${type}`;
-    sp.textContent = txt || (type === 'hit' ? '+1' : 'miss');
-    host.appendChild(sp);
-    setTimeout(() => sp.remove(), 700);
-  }
-
-  function endGame(){
-    gameOn = false;
-    board.setAttribute('aria-disabled','true');
-    if (moveTimeout) { clearTimeout(moveTimeout); moveTimeout = null; }
-    if (despawnTimeout){ clearTimeout(despawnTimeout); despawnTimeout = null; }
-    clearInterval(tickTimer); tickTimer = null;
-    clearMole();
-    setStatus(`Time up. Final score ${score}.`);
-  }
-
-  function scheduleNext(){
-    if (!gameOn) return;
-    const ms = currentMoveMs();
-    moveTimeout = setTimeout(() => {
-      if (!gameOn) return;
-      showEntity(randIdx(moleIdx));
-      scheduleNext();
-    }, ms);
-  }
-
-  function resetState(){
-    score=0; misses=0; taps=0; timeLeft=GAME_SECONDS; streak=0; startedAt=Date.now();
-    updateHUD(); setStatus("Tap the dog. Avoid the 💩.");
-    if (moveTimeout) clearTimeout(moveTimeout);
-    if (despawnTimeout) clearTimeout(despawnTimeout);
-    clearInterval(tickTimer);
-    clearMole();
-    gameOn = true;
-    board.setAttribute('aria-disabled','false');
-  }
-
+  function updateHUD(){timeEl.textContent=timeLeft;scoreEl.textContent=score;missEl.textContent=misses;accEl.textContent=`${taps?Math.round(score/taps*100):100}%`;timeFill.style.width=`${(timeLeft/GAME_SECONDS)*100}%`;}
+  function popup(type,host,txt){const s=document.createElement('div');s.className=`pop ${type}`;s.textContent=txt;host.appendChild(s);setTimeout(()=>s.remove(),700);}
+  function scheduleNext(){if(!gameOn)return;moveTimeout=setTimeout(()=>{if(!gameOn)return;showEntity(randIdx(moleIdx));scheduleNext();},currentMoveMs());}
   function startGame(){
-    resetState();
-    showEntity(randIdx(-1));
-    scheduleNext();
-    tickTimer = setInterval(() => {
-      if (!gameOn) return;
-      timeLeft -= 1;
-      if (timeLeft <= 0) { timeLeft = 0; updateHUD(); endGame(); return; }
-      updateHUD();
-    }, 1000);
+    score=0;misses=0;taps=0;timeLeft=GAME_SECONDS;streak=0;startedAt=Date.now();updateHUD();
+    clearMole();if(moveTimeout)clearTimeout(moveTimeout);if(despawnTimeout)clearTimeout(despawnTimeout);
+    clearInterval(tickTimer);gameOn=true;showEntity(randIdx(-1));scheduleNext();
+    tickTimer=setInterval(()=>{if(!gameOn)return;timeLeft--;if(timeLeft<=0){timeLeft=0;updateHUD();gameOn=false;clearMole();clearInterval(tickTimer);statusEl.textContent=`Time up. Final score ${score}.`;return;}updateHUD();},1000);
   }
-
-  // Input
-  board.addEventListener('pointerdown', (e) => {
-    if (!gameOn) return;
-    const hole = e.target.closest('.hole'); if (!hole) return;
-    const idx = Number(hole.dataset.idx); taps += 1;
-
-    if (idx === moleIdx && entity){
-      if (entity.kind === 'dog'){
-        score += 1; streak += 1;
-        hole.classList.add('bonk'); popup('hit', hole, '+1');
-        setTimeout(() => hole.classList.remove('bonk'), 150);
-        clearMole();
-      } else {
-        score = Math.max(0, score - 1);
-        misses += 1; streak = 0;
-        document.body.classList.add('miss-flash'); popup('penalty', hole, '−1');
-        setTimeout(() => document.body.classList.remove('miss-flash'), 180);
-        clearMole();
-      }
-    } else {
-      misses += 1; streak = 0;
-      document.body.classList.add('miss-flash'); popup('miss', hole, 'miss');
-      setTimeout(() => document.body.classList.remove('miss-flash'), 180);
-    }
+  document.getElementById('board').addEventListener('pointerdown',e=>{
+    if(!gameOn)return;const h=e.target.closest('.hole');if(!h)return;const idx=+h.dataset.idx;taps++;
+    if(idx===moleIdx&&entity){if(entity.kind==='dog'){score++;streak++;h.classList.add('bonk');popup('hit',h,'+1');setTimeout(()=>h.classList.remove('bonk'),150);clearMole();}
+      else{score=Math.max(0,score-1);misses++;streak=0;popup('penalty',h,'−1');clearMole();}}
+    else{misses++;streak=0;popup('miss',h,'miss');}
     updateHUD();
-  }, { passive:true });
-
-  // Keys 1–9 and start on Enter/Space
-  window.addEventListener('keydown', (e) => {
-    if (!gameOn && !intro.hasAttribute('hidden') && (e.key === 'Enter' || e.code === 'Space')) { startBtn.click(); return; }
-    if (!gameOn) return;
-    const n = parseInt(e.key, 10);
-    if (n >= 1 && n <= 9) HOLES[n-1].dispatchEvent(new PointerEvent('pointerdown', {bubbles:true}));
   });
-
-  // Intro and restart (restart is always live)
-  startBtn.addEventListener('click', () => { intro.setAttribute('hidden',''); startGame(); });
-  restartBtn.addEventListener('click', startGame);
-
+  startBtn.addEventListener('click',()=>{intro.setAttribute('hidden','');startGame();});
+  restartBtn.addEventListener('click',startGame);
   updateHUD();
 })();
 </script>
