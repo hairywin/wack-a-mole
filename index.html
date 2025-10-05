@@ -3,45 +3,99 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
-<title>Whack-a-Dog — Final Mobile Edition</title>
+<title>Whack-a-Dog — Final Mobile Edition (Tuned)</title>
 <style>
-  :root{--bg:#0a0c14;--panel:#0e1733;--ink:#fff;--muted:#d6e1ff;--ring:#6ba7ff;--accent:#22c55e;--cyan:#22d3ee;--danger:#ff4d4d;--focus:#ffdd57}
+  :root{
+    --bg:#0a0c14; --panel:#0e1733; --ink:#fff; --muted:#d6e1ff;
+    --ring:#6ba7ff; --accent:#22c55e; --cyan:#22d3ee; --danger:#ff4d4d; --focus:#ffdd57;
+  }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100svh;overflow:hidden;background:linear-gradient(180deg,#0c1022 0%,#070a14 60%,#05070e 100%)}
   [hidden]{display:none!important}
-  body{display:flex;flex-direction:column;align-items:center;justify-content:space-between;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;color:var(--ink);padding:env(safe-area-inset-top) 10px env(safe-area-inset-bottom)}
+  body{
+    display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+    font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+    color:var(--ink);padding:env(safe-area-inset-top) 10px env(safe-area-inset-bottom);
+  }
   .wrap{width:100%;max-width:800px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%}
-  .hud{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:var(--panel);border:2px solid #284a8a;border-radius:12px;padding:10px 12px;width:100%;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+  .hud{
+    display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
+    background:var(--panel);border:2px solid #284a8a;border-radius:12px;padding:10px 12px;
+    width:100%;box-shadow:0 8px 20px rgba(0,0,0,.4);
+  }
   .meters{display:flex;gap:8px 12px;flex-wrap:wrap;align-items:center}
-  .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#0c1533;border:2px solid #2b4e96;font-weight:800;font-size:clamp(12px,3vw,16px)}
+  .pill{
+    display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;
+    background:#0c1533;border:2px solid #2b4e96;font-weight:800;font-size:clamp(12px,3vw,16px)
+  }
   .pill .num{font-variant-numeric:tabular-nums}
-  .pill.timer .num{color:var(--cyan)} .pill.score .num{color:var(--accent)} .pill.misses .num{color:var(--danger)} .pill.acc .num{color:#b7faff}
+  .pill.timer .num{color:var(--cyan)} .pill.score .num{color:var(--accent)} .pill.misses .num{color:var(--danger)}
+  .pill.acc .num{color:#b7faff}
   .controls{display:flex;gap:10px}
-  button{appearance:none;border:2px solid #2b4e96;background:#0f1a3b;color:var(--ink);font-weight:800;padding:8px 12px;border-radius:10px;cursor:pointer}
+  button{
+    appearance:none;border:2px solid #2b4e96;background:#0f1a3b;color:var(--ink);
+    font-weight:800;padding:8px 12px;border-radius:10px;cursor:pointer;
+  }
   button:active{transform:translateY(1px)} button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
   .timebar{grid-column:1/-1;position:relative;height:8px;border-radius:999px;overflow:hidden;background:#061024;border:2px solid #284a8a;margin-top:4px}
   .timebar>.fill{height:100%;width:100%;background:linear-gradient(90deg,#22d3ee,#60a5fa);transition:width .25s linear}
 
-  .board{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:min(90vmin,550px);max-height:60vh;aspect-ratio:1/1;margin-top:10px}
-  .hole{position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;cursor:pointer;background:linear-gradient(180deg,#13255b 0%,#0e183c 100%);border:2px solid #2b4e96;touch-action:manipulation;display:flex;align-items:center;justify-content:center}
+  /* Game grid */
+  .board{
+    flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+    width:min(90vmin,550px);max-height:60vh;aspect-ratio:1/1;margin-top:10px;
+  }
+  .hole{
+    position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;cursor:pointer;
+    background:linear-gradient(180deg,#13255b 0%,#0e183c 100%);border:2px solid #2b4e96;touch-action:manipulation;
+    display:flex;align-items:center;justify-content:center;
+  }
   .hole:focus-visible{outline:3px solid var(--focus);outline-offset:1px}
-  .mole{font-size:clamp(56px,13vmin,110px);line-height:1;user-select:none;pointer-events:none;opacity:0;transition:transform .15s ease,opacity .15s ease;transform:scale(.5)}
+  .mole{
+    font-size:clamp(56px,13vmin,110px);
+    line-height:1;user-select:none;pointer-events:none;opacity:0;
+    transition:transform .15s ease,opacity .15s ease;transform:scale(.5);
+  }
   .hole.has-mole .mole{opacity:1;transform:scale(1)}
-  .hole.bonk{animation:bonk .18s ease}@keyframes bonk{0%{filter:brightness(1)}50%{filter:brightness(1.6)}100%{filter:brightness(1)}}
-  .miss-flash{animation:miss .22s ease}@keyframes miss{0%{background-color:transparent}40%{background-color:rgba(255,77,77,.22)}100%{background-color:transparent}}
-  .pop{position:absolute;left:50%;top:35%;transform:translate(-50%,0);font-weight:1000;font-size:clamp(14px,4.2vmin,22px);pointer-events:none;user-select:none;opacity:0;animation:rise .6s ease forwards}
+  .hole.bonk{animation:bonk .18s ease}
+  @keyframes bonk{0%{filter:brightness(1)}50%{filter:brightness(1.6)}100%{filter:brightness(1)}}
+  .miss-flash{animation:miss .22s ease}
+  @keyframes miss{0%{background-color:transparent}40%{background-color:rgba(255,77,77,.22)}100%{background-color:transparent}}
+  .pop{position:absolute;left:50%;top:35%;transform:translate(-50%,0);font-weight:1000;font-size:clamp(14px,4.2vmin,22px);
+    pointer-events:none;user-select:none;opacity:0;animation:rise .6s ease forwards}
   .pop.hit{color:var(--accent)} .pop.miss,.pop.penalty{color:var(--danger)}
   @keyframes rise{from{transform:translate(-50%,10px);opacity:0}30%{opacity:1}to{transform:translate(-50%,-22px);opacity:0}}
   .status{text-align:center;color:var(--muted);font-size:clamp(12px,3vw,15px);min-height:1.2em;margin-top:4px}
 
-  .overlay{position:fixed;inset:0;display:grid;place-items:center;z-index:10;background:rgba(7,10,20,.85);backdrop-filter:blur(4px);padding:calc(10px + env(safe-area-inset-top)) 12px calc(10px + env(safe-area-inset-bottom))}
-  .modal{width:min(90%,500px);border-radius:14px;padding:16px;background:linear-gradient(180deg,#15235a,#0f1734);border:2px solid #284a8a;text-align:left}
+  /* Intro overlay */
+  .overlay{
+    position:fixed;inset:0;display:grid;place-items:center;z-index:10;
+    background:rgba(7,10,20,.85);backdrop-filter:blur(4px);
+    padding:calc(10px + env(safe-area-inset-top)) 12px calc(10px + env(safe-area-inset-bottom));
+  }
+  .modal{width:min(90%,500px);border-radius:14px;padding:16px;background:linear-gradient(180deg,#15235a,#0f1734);
+    border:2px solid #284a8a;text-align:left}
   .modal h1{margin:0 0 8px;font-size:1.1rem}
   .modal ul{margin:8px 0 10px 18px;padding:0;line-height:1.5}
 
-  .countdown{position:fixed;inset:0;z-index:12;display:grid;place-items:center;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);padding:calc(10px + env(safe-area-inset-top)) 12px calc(10px + env(safe-area-inset-bottom))}
-  .digit{font-weight:1000;font-variant-numeric:tabular-nums;font-size:min(26vmin,170px);color:#fff;text-shadow:0 6px 28px rgba(0,0,0,.55);animation:pop 800ms ease both}
-  @keyframes pop{0%{opacity:0;transform:scale(.4)}30%{opacity:1;transform:scale(1.08)}60%{transform:scale(1)}100%{opacity:0}}
+  /* Countdown overlay */
+  .countdown{
+    position:fixed;inset:0;z-index:12;display:grid;place-items:center;
+    background:rgba(0,0,0,.35);backdrop-filter:blur(2px);
+    padding:calc(10px + env(safe-area-inset-top)) 12px calc(10px + env(safe-area-inset-bottom));
+  }
+  .digit{
+    font-weight:1000; font-variant-numeric:tabular-nums;
+    font-size:min(26vmin,170px);
+    color:#ffffff; text-shadow:0 6px 28px rgba(0,0,0,.55);
+    animation:pop 800ms ease both;
+  }
+  @keyframes pop{
+    0%{opacity:0; transform:scale(.4)}
+    30%{opacity:1; transform:scale(1.08)}
+    60%{transform:scale(1)}
+    100%{opacity:0}
+  }
 </style>
 </head>
 <body>
@@ -98,24 +152,24 @@
   const intro = document.getElementById('intro');
   const startBtn = document.getElementById('startBtn');
 
-  /* Base timing */
+  /* Tuned difficulty */
   const GAME_SECONDS=30;
-  const START_MOVE_MS=800, END_MOVE_MS=420;   // slightly slower end
-  const START_VIZ_MS=600, END_VIZ_MS=340;     // slightly longer end visibility
 
-  /* Fair quick peeks + reaction floors */
-  const REACTION_FLOOR_MS=280;
-  const QUICK_PEEK_PROB=.22, QUICK_MIN_MS=280, QUICK_MAX_MS=360;
+  // Softer ramp
+  const START_MOVE_MS=900, END_MOVE_MS=500;
+  const START_VIZ_MS =750, END_VIZ_MS =420;
+
+  // Gentler floors
+  const MOVE_FLOOR_MS=360, VIZ_FLOOR_MS=220;
+
+  // Quick peeks less frequent and longer
+  const QUICK_PEEK_PROB=.10, QUICK_MIN_MS=220, QUICK_MAX_MS=380;
+
+  // Optional frustration trim
   const DECOY_PROB=.18;
 
-  /* Streak effects and floors */
-  const STREAK_STEP=3, STREAK_MOVE_MULT=.94, STREAK_VIZ_MULT=.92;
-  const MOVE_FLOOR_MS=280, VIZ_FLOOR_MS=200;  // raised floors
-
-  /* Late-game dampening (last 10s) */
-  const LATE_SLOWDOWN_START=10;       // seconds remaining when dampening begins
-  const LATE_MOVE_MAX_BOOST=1.20;     // up to +20% longer move interval
-  const LATE_VIZ_MAX_BOOST=1.30;      // up to +30% longer visibility
+  // Gentler streak ramp
+  const STREAK_STEP=4, STREAK_MOVE_MULT=.97, STREAK_VIZ_MULT=.96;
 
   let score=0,misses=0,taps=0,timeLeft=GAME_SECONDS,moleIdx=-1,entity=null,gameOn=false,startedAt=0;
   let tickTimer=null,moveTimeout=null,despawnTimeout=null,streak=0;
@@ -124,24 +178,9 @@
   function progress(){return clamp01((Date.now()-startedAt)/1000/GAME_SECONDS);}
   function baseMoveMs(){return Math.round(lerp(START_MOVE_MS,END_MOVE_MS,progress()));}
   function baseVizMs(){return Math.round(lerp(START_VIZ_MS,END_VIZ_MS,progress()));}
-  function streakFactor(mult,floor,base){let steps=Math.floor(streak/STREAK_STEP),ms=base;for(let i=0;i<steps;i++)ms=Math.max(Math.round(ms*mult),floor);return ms;}
-
-  function lateBoost(scaleMax){
-    if(timeLeft > LATE_SLOWDOWN_START) return 1;
-    const t = 1 - (timeLeft / LATE_SLOWDOWN_START); // 0..1 as we approach 0s
-    return 1 + t * (scaleMax - 1);
-  }
-
-  function currentMoveMs(){
-    const ms = streakFactor(STREAK_MOVE_MULT, MOVE_FLOOR_MS, baseMoveMs());
-    return Math.round(ms * lateBoost(LATE_MOVE_MAX_BOOST));
-  }
-
-  function currentVizMs(){
-    const ms = Math.max(REACTION_FLOOR_MS, streakFactor(STREAK_VIZ_MULT, VIZ_FLOOR_MS, baseVizMs()));
-    return Math.round(ms * lateBoost(LATE_VIZ_MAX_BOOST));
-  }
-
+  function streakFactor(mult,floor,base){let steps=Math.floor(streak/STREAK_STEP),ms=base;for(let s=0;s<steps;s++)ms=Math.max(Math.round(ms*mult),floor);return ms;}
+  function currentMoveMs(){return streakFactor(STREAK_MOVE_MULT,MOVE_FLOOR_MS,baseMoveMs());}
+  function currentVizMs(){return streakFactor(STREAK_VIZ_MULT,VIZ_FLOOR_MS,baseVizMs());}
   function randIdx(ex){let i;do{i=(Math.random()*HOLES.length)|0;}while(i===ex);return i;}
   function randInt(a,b){return a+Math.floor(Math.random()*(b-a+1));}
 
@@ -153,25 +192,19 @@
 
   function showEntity(i){
     clearMole();
-    const hole=HOLES[i],m=hole.querySelector('.mole');
-    const isDecoy=Math.random()<DECOY_PROB;
-    const isQuick=!isDecoy && Math.random()<QUICK_PEEK_PROB;
+    const hole=HOLES[i],mole=hole.querySelector('.mole');
+    const decoy=Math.random()<DECOY_PROB,quick=!decoy&&Math.random()<QUICK_PEEK_PROB;
+    entity={kind:decoy?'decoy':'dog',hole:i,quick};
+    mole.textContent=decoy?'💩':'🐶';
+    hole.classList.add('has-mole');moleIdx=i;
 
-    entity={kind:isDecoy?'decoy':'dog',hole:i,quick:isQuick};
-    m.textContent=isDecoy?'💩':'🐶';
-    hole.classList.add('has-mole');
-    moleIdx=i;
-
-    let viz = isDecoy ? currentVizMs() : (isQuick ? randInt(QUICK_MIN_MS,QUICK_MAX_MS) : currentVizMs());
-    viz = Math.max(viz, REACTION_FLOOR_MS);
-
+    const viz=decoy?currentVizMs():(quick?randInt(QUICK_MIN_MS,QUICK_MAX_MS):currentVizMs());
     despawnTimeout=setTimeout(()=>{if(!gameOn)return;if(moleIdx===i){if(entity.kind==='dog'){misses++;taps++;updateHUD();}clearMole();}},viz);
-    return viz;
   }
 
   function updateHUD(){
     timeEl.textContent=timeLeft; scoreEl.textContent=score; missEl.textContent=misses;
-    accEl.textContent=`${taps?Math.round(score/taps*100):100}%`;
+    accEl.textContent = `${taps?Math.round(score/taps*100):100}%`;
     timeFill.style.width=`${(timeLeft/GAME_SECONDS)*100}%`;
   }
 
@@ -180,39 +213,40 @@
     host.appendChild(s); setTimeout(()=>s.remove(),700);
   }
 
-  function scheduleNext(afterMs){
+  function scheduleNext(){
     if(!gameOn) return;
-    const delay = Math.max(currentMoveMs(), afterMs);
-    if(moveTimeout) clearTimeout(moveTimeout);
-    moveTimeout=setTimeout(()=>{ if(!gameOn) return; const viz=showEntity(randIdx(moleIdx)); scheduleNext(viz); }, delay);
+    moveTimeout=setTimeout(()=>{ if(!gameOn) return; showEntity(randIdx(moleIdx)); scheduleNext(); }, currentMoveMs());
   }
 
+  /* Countdown */
   function runCountdown(done){
     gameOn=false; clearMole();
     if(moveTimeout)clearTimeout(moveTimeout);
     if(despawnTimeout)clearTimeout(despawnTimeout);
     if(tickTimer)clearInterval(tickTimer);
 
-    const overlay=document.createElement('div'); overlay.className='countdown'; document.body.appendChild(overlay);
+    const overlay=document.createElement('div');
+    overlay.className='countdown';
+    document.body.appendChild(overlay);
+
     const seq=['3','2','1']; let i=0;
-    const step=()=>{ overlay.innerHTML=''; const d=document.createElement('div'); d.className='digit'; d.textContent=seq[i++]; overlay.appendChild(d);
-      if(i<seq.length){ setTimeout(step,800); } else { setTimeout(()=>{ overlay.remove(); done(); },820); } };
+    const step=()=>{
+      overlay.innerHTML='';
+      const d=document.createElement('div'); d.className='digit'; d.textContent=seq[i]; overlay.appendChild(d);
+      i++; if(i<seq.length){ setTimeout(step,800); } else { setTimeout(()=>{ overlay.remove(); done(); },820); }
+    };
     step();
   }
 
   function startGame(){
     score=0;misses=0;taps=0;timeLeft=GAME_SECONDS;streak=0;startedAt=Date.now();updateHUD();
-    clearMole(); if(moveTimeout)clearTimeout(moveTimeout); if(despawnTimeout)clearTimeout(despawnTimeout); if(tickTimer)clearInterval(tickTimer);
-    gameOn=true;
-    const firstViz=showEntity(randIdx(-1));
-    scheduleNext(firstViz);
-    tickTimer=setInterval(()=>{ if(!gameOn) return; timeLeft--; if(timeLeft<=0){timeLeft=0;updateHUD();gameOn=false;clearMole();clearInterval(tickTimer);statusEl.textContent=`Time up. Final score ${score}.`;return;} updateHUD(); },1000);
+    clearMole(); gameOn=true;
+    showEntity(randIdx(-1)); scheduleNext();
+    tickTimer=setInterval(()=>{ if(!gameOn)return; timeLeft--; if(timeLeft<=0){timeLeft=0;updateHUD();gameOn=false;clearMole();clearInterval(tickTimer);statusEl.textContent=`Time up. Final score ${score}.`;return;} updateHUD(); },1000);
   }
 
   document.getElementById('board').addEventListener('pointerdown',e=>{
-    if(!gameOn) return;
-    const h=e.target.closest('.hole'); if(!h) return;
-    const idx=+h.dataset.idx; taps++;
+    if(!gameOn)return; const h=e.target.closest('.hole'); if(!h)return; const idx=+h.dataset.idx; taps++;
     if(idx===moleIdx&&entity){
       if(entity.kind==='dog'){ score++; streak++; h.classList.add('bonk'); popup('hit',h,'+1'); setTimeout(()=>h.classList.remove('bonk'),150); clearMole(); }
       else { score=Math.max(0,score-1); misses++; streak=0; popup('penalty',h,'−1'); clearMole(); }
@@ -220,8 +254,8 @@
     updateHUD();
   });
 
-  function removeIntro(){ if(intro&&intro.parentNode) intro.parentNode.removeChild(intro); }
-  document.getElementById('startBtn').addEventListener('click',()=>{ removeIntro(); runCountdown(startGame); });
+  function removeIntro(){ if(intro&&intro.parentNode){ intro.parentNode.removeChild(intro); } }
+  startBtn.addEventListener('click',()=>{ removeIntro(); runCountdown(startGame); });
   window.addEventListener('keydown',e=>{ if(intro&&(e.key==='Enter'||e.code==='Space')){ removeIntro(); runCountdown(startGame); }});
   restartBtn.addEventListener('click',()=>runCountdown(startGame));
 
